@@ -29,8 +29,10 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 }
 
 void VulkanRenderer::cleanup()
-{
-	vkDestroyPipelineLayout(mainDevice.logicalDevice, pipelineLayout, nullptr);
+{	
+	vkDestroyPipeline(mainDevice.logicalDevice, graphicsPipeline, nullptr);			//reverse destorying agains creating
+	vkDestroyPipelineLayout(mainDevice.logicalDevice, pipelineLayout, nullptr);		//reverse destorying agains creating
+	vkDestroyRenderPass(mainDevice.logicalDevice, renderPass, nullptr);				//reverse destorying agains creating
 	for (auto image : swapChainImages) vkDestroyImageView(mainDevice.logicalDevice, image.imageView, nullptr);
 	vkDestroySwapchainKHR(mainDevice.logicalDevice, swapchain, nullptr);
 	vkDestroySurfaceKHR(instance, surface, nullptr);
@@ -268,14 +270,62 @@ void VulkanRenderer::createRenderPass()
 	subpass.pColorAttachments = &colourAttachmentReference;
 
 	// Необходимо определить, когда происходят переходы между макетами, используя зависимости от subpass
+	std::array<VkSubpassDependency, 2> subpassDependencies;
 
 
+	// -- Conversion from VK_IMAGE_LAYOUT_UNDEFINED to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL --
+	// - Source -
+	// Transition must hapen after...
+	subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+	//Говорим, что источник (откуда может быть зависимость) — не внутри render pass, а снаружи (например, от предыдущего кадра, или любого другого использования изображения до render pass).
+
+	subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	// Указываем что переход будет переходить  из стадии "bottom of pipe" (последняя стадия в пайплайне, когда уже ничего не происходит с изображением).
+	
+	subpassDependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	// GPU мог что-то читать из памяти перед этим (например, отображение предыдущего кадра), мы хотим это дождаться.
+
+
+	// - Destinations -
+	// But must happen before...
+	subpassDependencies[0].dstSubpass = 0;
+	//Это наш первый и единственный subpass, который будет начинать рендерить.
+
+	subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	// Начать писать в цветовой буфер, но только после того как всё предыдущие чтения закончились
+
+	subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	// В этом subpass будет читать и писать в цветовой буфер — так что, пожалуйста, разреши доступ к этим операциям, но только после того, как всё предыдущее завершилось (см. srcStage/Access).
+	// https://registry.khronos.org/vulkan/specs/latest/man/html/VkAccessFlagBits.html
+	subpassDependencies[0].dependencyFlags = 0; // Флаги зависимости, в данном случае не нужны, поэтому 0.
+
+	// -- Conversion from VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR --
+	// - Source -
+	// Transition must hapen after...
+	subpassDependencies[1].srcSubpass = 0; // начать эту синхронизацию после завершения 0-го subpass'а (того самого, в котором рисовали)
+	subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; //  ждать завершения вывода цвета в буфер (именно когда пиксели были реально нарисованы)
+	subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT; // Убедиться, что всё чтение и запись в цветовой буфер закончено — прежде чем что-то делать дальше
+	// - Destinations -
+	// But must happen before...
+	subpassDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL; // Передать управление наружу — другим частям пайплайна, за пределами render pass (например, системе показа изображения на экран)
+	subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT; // Следующий этап — самый последний, ничего больше не рендерится, только ожидание перед показом изображения
+	subpassDependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT; // Снаружи кто-то будет читать это изображение из памяти (в частности, vkQueuePresentKHR, который показывает кадр на экран)
+	// https://registry.khronos.org/vulkan/specs/latest/man/html/VkAccessFlagBits.html
+	subpassDependencies[1].dependencyFlags = 0; // Флаги зависимости, в данном случае не нужны, поэтому 0.
+
+
+	// Create info for Render Pass
 	VkRenderPassCreateInfo renderPassCreateInfo = {}; // Создаётся структура, содержащая всю информацию для создания render pass.
 	renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO; // Тип структуры Vulkan (обязательное поле для всех CreateInfo). 
 	renderPassCreateInfo.attachmentCount = 1; // Указываем, что в этом render pass'е используется 1 attachment —  colourAttachment.
 	renderPassCreateInfo.pAttachments = &colourAttachment;
 	renderPassCreateInfo.subpassCount = 1;
 	renderPassCreateInfo.pSubpasses = &subpass;
+	renderPassCreateInfo.dependencyCount = static_cast<uint32_t>(subpassDependencies.size());
+	renderPassCreateInfo.pDependencies = subpassDependencies.data();
+
+	VkResult result = vkCreateRenderPass(mainDevice.logicalDevice, &renderPassCreateInfo, nullptr, &renderPass);
+	if (result != VK_SUCCESS) throw (std::runtime_error("Failed to create Render Pass!"));
 }
 
 void VulkanRenderer::createGraphicPipeline()
@@ -425,6 +475,34 @@ void VulkanRenderer::createGraphicPipeline()
 	// -- DEPTH STENCIL TESTING --
 	// TODO: Set up depth stencil testing
 	 
+	// -- GRAPHIC PIPELINE CREATION INFO --
+	VkGraphicsPipelineCreateInfo pipelineCreateInfo = {}; // Создаём структуру пайплайна и обнуляем её (чтобы в памяти не осталось мусора)
+	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO; // Тип структуры — обязательно указывается для Vulkan (всё строго типизировано)
+	pipelineCreateInfo.stageCount = 2;										// Мы используем 2 стадии шейдеров: Вершинный(vertex), Фрагментный
+	pipelineCreateInfo.pStages = shadersStagers;							// Указатель на массив VkPipelineShaderStageCreateInfo, в котором лежат наши скомпилированные шейдеры
+	pipelineCreateInfo.pVertexInputState = &vertexInputCreateInfo;			// Как пайплайн будет интерпретировать входные вершины: формат, структура, атрибуты (позиция, цвет и т.д.)
+	pipelineCreateInfo.pInputAssemblyState = &assemblyCreateInfo;			// Указывает, как собирать вершины: треугольники, линии, точки (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST и т.п.)
+	pipelineCreateInfo.pViewportState = &viewportStateCreateInfo;			// Настройки viewport'а и scissor'а — то есть, куда и в какой области экрана рисовать
+	pipelineCreateInfo.pDynamicState = nullptr;								// Говорим: "Мы не используем динамические настройки (например, менять viewport на лету)." Можно включить позже для гибкости
+	pipelineCreateInfo.pRasterizationState = &rasterizationCreateInfo;		// Как преобразовывать примитивы в пиксели: Заполнять-(fill mode), Нарисовать только границу-Culling(не показывать задние стороны треугольников), Polygon mode и т.д.
+	pipelineCreateInfo.pMultisampleState = &multisamplingCreateInfo;		// Настройки мультисемплинга (MSAA), если используешь сглаживание
+	pipelineCreateInfo.pColorBlendState = &colorBlendinCraeteInfo;			// Как смешивать цвета (например, если рисуешь прозрачные объекты или делаешь альфа-блендинг)
+	pipelineCreateInfo.pDepthStencilState = nullptr;						// не используется буфер глубины (z-buffer) или трафарет. Можно подключить позже, если делается 3D
+	pipelineCreateInfo.layout = pipelineLayout;								// Содержит layout дескрипторов и push-констант. Определяет, как GPU получает доступ к uniform'ам и ресурсам (текстурам и т.д.)
+	pipelineCreateInfo.renderPass = renderPass;								// Привязываем пайплайн к render pass — то есть, указываем, куда он будет рендерить
+	pipelineCreateInfo.subpass = 0;											// Указываем, что пайплайн будет использовать первый (и единственный) subpass в этом render pass.
+
+	// Pipeline Derivatives : Can create multi pipelines that derive from one another for optimisation
+	pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE; // Existing pipeline to derive from...
+	// Это полезно, если надо создать 100 пайплайнов, которые отличаются буквально одной настройкой (например, шейдером или блендингом).
+	pipelineCreateInfo.basePipelineIndex = -1; // `-1`= не используется наследование по индексу
+	// Альтернативный способ указать пайплайн, от которого можно наследоваться — по индексу внутри массива VkGraphicsPipelineCreateInfo, если ты создаёшь несколько пайплайнов за один вызов vkCreateGraphicsPipelines.
+
+	// Create the Graphics Pipeline
+	result = vkCreateGraphicsPipelines(mainDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline);
+	// Эта функция создаёт графический пайплайн (pipeline), т.е. весь "маршрут", по которому данные проходят через GPU — от вершин до вывода на экран.
+	if (result != VK_SUCCESS) throw std::runtime_error("Failed to create a Graphics Pipeline!");
+
 	// Destroy Shader Modules, no longer needed after Pipeline created
 	vkDestroyShaderModule(mainDevice.logicalDevice, fragmentShaderModule, nullptr);
 	vkDestroyShaderModule(mainDevice.logicalDevice, vertexShaderModule, nullptr);
