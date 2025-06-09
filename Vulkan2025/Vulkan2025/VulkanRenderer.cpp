@@ -1,4 +1,4 @@
-#include "VulkanRenderer.h"
+п»ї#include "VulkanRenderer.h"
 
 VulkanRenderer::VulkanRenderer()
 {
@@ -7,7 +7,7 @@ VulkanRenderer::VulkanRenderer()
 int VulkanRenderer::init(GLFWwindow* newWindow)
 {
 
-	window = newWindow; // Сохраняем переданное окно (GLFWwindow*) в член класса window, чтобы использовать его внутри других методов (createSurface, например).
+	window = newWindow; // РЎРѕС…СЂР°РЅСЏРµРј РїРµСЂРµРґР°РЅРЅРѕРµ РѕРєРЅРѕ (GLFWwindow*) РІ С‡Р»РµРЅ РєР»Р°СЃСЃР° window, С‡С‚РѕР±С‹ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РµРіРѕ РІРЅСѓС‚СЂРё РґСЂСѓРіРёС… РјРµС‚РѕРґРѕРІ (createSurface, РЅР°РїСЂРёРјРµСЂ).
 
 	try {
 		createIntstance();
@@ -21,8 +21,8 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 	catch (const std::runtime_error& e) {
 		printf("ERROR: %s\n", e.what());
 		return EXIT_FAILURE;
-		// Если на любом этапе произойдёт ошибка (например, не найден GPU или не удалось создать swapchain),
-		// программа поймает std::runtime_error и выведет сообщение.
+		// Р•СЃР»Рё РЅР° Р»СЋР±РѕРј СЌС‚Р°РїРµ РїСЂРѕРёР·РѕР№РґС‘С‚ РѕС€РёР±РєР° (РЅР°РїСЂРёРјРµСЂ, РЅРµ РЅР°Р№РґРµРЅ GPU РёР»Рё РЅРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ swapchain),
+		// РїСЂРѕРіСЂР°РјРјР° РїРѕР№РјР°РµС‚ std::runtime_error Рё РІС‹РІРµРґРµС‚ СЃРѕРѕР±С‰РµРЅРёРµ.
 	}
 
 	return 0;
@@ -241,35 +241,35 @@ void VulkanRenderer::createSwapChain()
 void VulkanRenderer::createRenderPass()
 {
 	//Color attachment of render pass
-	VkAttachmentDescription colourAttachment = {}; // Создаётся структура, описывающая один цветовой буфер (attachment), который будет использоваться в render pass'е.
-	colourAttachment.format = swapChainImageFormat; // Указываем формат пикселей, с которым будет работать этот буфер.
-	colourAttachment.samples = VK_SAMPLE_COUNT_1_BIT; // один сэмпл на пиксель, т.е. без MSAA (anti-aliasing).
+	VkAttachmentDescription colourAttachment = {}; // РЎРѕР·РґР°С‘С‚СЃСЏ СЃС‚СЂСѓРєС‚СѓСЂР°, РѕРїРёСЃС‹РІР°СЋС‰Р°СЏ РѕРґРёРЅ С†РІРµС‚РѕРІРѕР№ Р±СѓС„РµСЂ (attachment), РєРѕС‚РѕСЂС‹Р№ Р±СѓРґРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ РІ render pass'Рµ.
+	colourAttachment.format = swapChainImageFormat; // РЈРєР°Р·С‹РІР°РµРј С„РѕСЂРјР°С‚ РїРёРєСЃРµР»РµР№, СЃ РєРѕС‚РѕСЂС‹Рј Р±СѓРґРµС‚ СЂР°Р±РѕС‚Р°С‚СЊ СЌС‚РѕС‚ Р±СѓС„РµСЂ.
+	colourAttachment.samples = VK_SAMPLE_COUNT_1_BIT; // РѕРґРёРЅ СЃСЌРјРїР» РЅР° РїРёРєСЃРµР»СЊ, С‚.Рµ. Р±РµР· MSAA (anti-aliasing).
 	/*
-	* Если включать MSAA, то здесь нужно будет поставить VK_SAMPLE_COUNT_4_BIT или выше,
-	* а потом разрешать результат в отдельный буфер.
+	* Р•СЃР»Рё РІРєР»СЋС‡Р°С‚СЊ MSAA, С‚Рѕ Р·РґРµСЃСЊ РЅСѓР¶РЅРѕ Р±СѓРґРµС‚ РїРѕСЃС‚Р°РІРёС‚СЊ VK_SAMPLE_COUNT_4_BIT РёР»Рё РІС‹С€Рµ,
+	* Р° РїРѕС‚РѕРј СЂР°Р·СЂРµС€Р°С‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ РІ РѕС‚РґРµР»СЊРЅС‹Р№ Р±СѓС„РµСЂ.
 	*/
-	colourAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;				// Очищает буфер перед началом рендерингом.
-	colourAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;			// После окончания рендеринга — результат сохраняется (чтобы показать на экране).
-	colourAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;	// Не использует трафарет 
-	colourAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // Не сохраняет трафрает
+	colourAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;				// РћС‡РёС‰Р°РµС‚ Р±СѓС„РµСЂ РїРµСЂРµРґ РЅР°С‡Р°Р»РѕРј СЂРµРЅРґРµСЂРёРЅРіРѕРј.
+	colourAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;			// РџРѕСЃР»Рµ РѕРєРѕРЅС‡Р°РЅРёСЏ СЂРµРЅРґРµСЂРёРЅРіР° вЂ” СЂРµР·СѓР»СЊС‚Р°С‚ СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ (С‡С‚РѕР±С‹ РїРѕРєР°Р·Р°С‚СЊ РЅР° СЌРєСЂР°РЅРµ).
+	colourAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;	// РќРµ РёСЃРїРѕР»СЊР·СѓРµС‚ С‚СЂР°С„Р°СЂРµС‚ 
+	colourAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // РќРµ СЃРѕС…СЂР°РЅСЏРµС‚ С‚СЂР°С„СЂР°РµС‚
 
 	// Framebuffer data will be stored as an image, but images can be given different data layouts
 	// to give optimal use for certain operations in the pipeline
-	colourAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; //  перед рендерингом изображение не имеет определёного формата
-	colourAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // после рендеринга изображение будет готово к показу на экране
+	colourAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; //  РїРµСЂРµРґ СЂРµРЅРґРµСЂРёРЅРіРѕРј РёР·РѕР±СЂР°Р¶РµРЅРёРµ РЅРµ РёРјРµРµС‚ РѕРїСЂРµРґРµР»С‘РЅРѕРіРѕ С„РѕСЂРјР°С‚Р°
+	colourAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // РїРѕСЃР»Рµ СЂРµРЅРґРµСЂРёРЅРіР° РёР·РѕР±СЂР°Р¶РµРЅРёРµ Р±СѓРґРµС‚ РіРѕС‚РѕРІРѕ Рє РїРѕРєР°Р·Сѓ РЅР° СЌРєСЂР°РЅРµ
 
 	// Attachment reference uses an attachment index that refers to index in the attachment list passed to renderPassCreateInfo
-	VkAttachmentReference colourAttachmentReference = {}; // Создаётся объект, который будет использоваться внутри subpass'а и указывает, какой attachment и в каком layout использовать.
-	colourAttachmentReference.attachment = 0; // Индекс attachment'а — это первый (и единственный) attachment в pAttachments.
-	colourAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // Layout, в котором attachment будет использоваться во время рендеринга. COLOR_ATTACHMENT_OPTIMAL — лучший вариант для записи в цветовой буфер.
+	VkAttachmentReference colourAttachmentReference = {}; // РЎРѕР·РґР°С‘С‚СЃСЏ РѕР±СЉРµРєС‚, РєРѕС‚РѕСЂС‹Р№ Р±СѓРґРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ РІРЅСѓС‚СЂРё subpass'Р° Рё СѓРєР°Р·С‹РІР°РµС‚, РєР°РєРѕР№ attachment Рё РІ РєР°РєРѕРј layout РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ.
+	colourAttachmentReference.attachment = 0; // РРЅРґРµРєСЃ attachment'Р° вЂ” СЌС‚Рѕ РїРµСЂРІС‹Р№ (Рё РµРґРёРЅСЃС‚РІРµРЅРЅС‹Р№) attachment РІ pAttachments.
+	colourAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // Layout, РІ РєРѕС‚РѕСЂРѕРј attachment Р±СѓРґРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ РІРѕ РІСЂРµРјСЏ СЂРµРЅРґРµСЂРёРЅРіР°. COLOR_ATTACHMENT_OPTIMAL вЂ” Р»СѓС‡С€РёР№ РІР°СЂРёР°РЅС‚ РґР»СЏ Р·Р°РїРёСЃРё РІ С†РІРµС‚РѕРІРѕР№ Р±СѓС„РµСЂ.
 
 	// Information about a particular subopass the Render Pass is using
-	VkSubpassDescription subpass = {}; // Создаётся описание подпрохода (subpass), который будет использоваться в render pass.
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // Subpass будет использоваться в графическом пайплайне (не compute и не raytracing).
-	subpass.colorAttachmentCount = 1; // У subpass'а будет один цветовой буфер — ссылка на colourAttachmentReference.
+	VkSubpassDescription subpass = {}; // РЎРѕР·РґР°С‘С‚СЃСЏ РѕРїРёСЃР°РЅРёРµ РїРѕРґРїСЂРѕС…РѕРґР° (subpass), РєРѕС‚РѕСЂС‹Р№ Р±СѓРґРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ РІ render pass.
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // Subpass Р±СѓРґРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ РІ РіСЂР°С„РёС‡РµСЃРєРѕРј РїР°Р№РїР»Р°Р№РЅРµ (РЅРµ compute Рё РЅРµ raytracing).
+	subpass.colorAttachmentCount = 1; // РЈ subpass'Р° Р±СѓРґРµС‚ РѕРґРёРЅ С†РІРµС‚РѕРІРѕР№ Р±СѓС„РµСЂ вЂ” СЃСЃС‹Р»РєР° РЅР° colourAttachmentReference.
 	subpass.pColorAttachments = &colourAttachmentReference;
 
-	// Необходимо определить, когда происходят переходы между макетами, используя зависимости от subpass
+	// РќРµРѕР±С…РѕРґРёРјРѕ РѕРїСЂРµРґРµР»РёС‚СЊ, РєРѕРіРґР° РїСЂРѕРёСЃС…РѕРґСЏС‚ РїРµСЂРµС…РѕРґС‹ РјРµР¶РґСѓ РјР°РєРµС‚Р°РјРё, РёСЃРїРѕР»СЊР·СѓСЏ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ subpass
 	std::array<VkSubpassDependency, 2> subpassDependencies;
 
 
@@ -277,47 +277,47 @@ void VulkanRenderer::createRenderPass()
 	// - Source -
 	// Transition must hapen after...
 	subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-	//Говорим, что источник (откуда может быть зависимость) — не внутри render pass, а снаружи (например, от предыдущего кадра, или любого другого использования изображения до render pass).
+	//Р“РѕРІРѕСЂРёРј, С‡С‚Рѕ РёСЃС‚РѕС‡РЅРёРє (РѕС‚РєСѓРґР° РјРѕР¶РµС‚ Р±С‹С‚СЊ Р·Р°РІРёСЃРёРјРѕСЃС‚СЊ) вЂ” РЅРµ РІРЅСѓС‚СЂРё render pass, Р° СЃРЅР°СЂСѓР¶Рё (РЅР°РїСЂРёРјРµСЂ, РѕС‚ РїСЂРµРґС‹РґСѓС‰РµРіРѕ РєР°РґСЂР°, РёР»Рё Р»СЋР±РѕРіРѕ РґСЂСѓРіРѕРіРѕ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ РґРѕ render pass).
 
 	subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-	// Указываем что переход будет переходить  из стадии "bottom of pipe" (последняя стадия в пайплайне, когда уже ничего не происходит с изображением).
+	// РЈРєР°Р·С‹РІР°РµРј С‡С‚Рѕ РїРµСЂРµС…РѕРґ Р±СѓРґРµС‚ РїРµСЂРµС…РѕРґРёС‚СЊ  РёР· СЃС‚Р°РґРёРё "bottom of pipe" (РїРѕСЃР»РµРґРЅСЏСЏ СЃС‚Р°РґРёСЏ РІ РїР°Р№РїР»Р°Р№РЅРµ, РєРѕРіРґР° СѓР¶Рµ РЅРёС‡РµРіРѕ РЅРµ РїСЂРѕРёСЃС…РѕРґРёС‚ СЃ РёР·РѕР±СЂР°Р¶РµРЅРёРµРј).
 	
 	subpassDependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	// GPU мог что-то читать из памяти перед этим (например, отображение предыдущего кадра), мы хотим это дождаться.
+	// GPU РјРѕРі С‡С‚Рѕ-С‚Рѕ С‡РёС‚Р°С‚СЊ РёР· РїР°РјСЏС‚Рё РїРµСЂРµРґ СЌС‚РёРј (РЅР°РїСЂРёРјРµСЂ, РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРґС‹РґСѓС‰РµРіРѕ РєР°РґСЂР°), РјС‹ С…РѕС‚РёРј СЌС‚Рѕ РґРѕР¶РґР°С‚СЊСЃСЏ.
 
 
 	// - Destinations -
 	// But must happen before...
 	subpassDependencies[0].dstSubpass = 0;
-	//Это наш первый и единственный subpass, который будет начинать рендерить.
+	//Р­С‚Рѕ РЅР°С€ РїРµСЂРІС‹Р№ Рё РµРґРёРЅСЃС‚РІРµРЅРЅС‹Р№ subpass, РєРѕС‚РѕСЂС‹Р№ Р±СѓРґРµС‚ РЅР°С‡РёРЅР°С‚СЊ СЂРµРЅРґРµСЂРёС‚СЊ.
 
 	subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	// Начать писать в цветовой буфер, но только после того как всё предыдущие чтения закончились
+	// РќР°С‡Р°С‚СЊ РїРёСЃР°С‚СЊ РІ С†РІРµС‚РѕРІРѕР№ Р±СѓС„РµСЂ, РЅРѕ С‚РѕР»СЊРєРѕ РїРѕСЃР»Рµ С‚РѕРіРѕ РєР°Рє РІСЃС‘ РїСЂРµРґС‹РґСѓС‰РёРµ С‡С‚РµРЅРёСЏ Р·Р°РєРѕРЅС‡РёР»РёСЃСЊ
 
 	subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	// В этом subpass будет читать и писать в цветовой буфер — так что, пожалуйста, разреши доступ к этим операциям, но только после того, как всё предыдущее завершилось (см. srcStage/Access).
+	// Р’ СЌС‚РѕРј subpass Р±СѓРґРµС‚ С‡РёС‚Р°С‚СЊ Рё РїРёСЃР°С‚СЊ РІ С†РІРµС‚РѕРІРѕР№ Р±СѓС„РµСЂ вЂ” С‚Р°Рє С‡С‚Рѕ, РїРѕР¶Р°Р»СѓР№СЃС‚Р°, СЂР°Р·СЂРµС€Рё РґРѕСЃС‚СѓРї Рє СЌС‚РёРј РѕРїРµСЂР°С†РёСЏРј, РЅРѕ С‚РѕР»СЊРєРѕ РїРѕСЃР»Рµ С‚РѕРіРѕ, РєР°Рє РІСЃС‘ РїСЂРµРґС‹РґСѓС‰РµРµ Р·Р°РІРµСЂС€РёР»РѕСЃСЊ (СЃРј. srcStage/Access).
 	// https://registry.khronos.org/vulkan/specs/latest/man/html/VkAccessFlagBits.html
-	subpassDependencies[0].dependencyFlags = 0; // Флаги зависимости, в данном случае не нужны, поэтому 0.
+	subpassDependencies[0].dependencyFlags = 0; // Р¤Р»Р°РіРё Р·Р°РІРёСЃРёРјРѕСЃС‚Рё, РІ РґР°РЅРЅРѕРј СЃР»СѓС‡Р°Рµ РЅРµ РЅСѓР¶РЅС‹, РїРѕСЌС‚РѕРјСѓ 0.
 
 	// -- Conversion from VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR --
 	// - Source -
 	// Transition must hapen after...
-	subpassDependencies[1].srcSubpass = 0; // начать эту синхронизацию после завершения 0-го subpass'а (того самого, в котором рисовали)
-	subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; //  ждать завершения вывода цвета в буфер (именно когда пиксели были реально нарисованы)
-	subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT; // Убедиться, что всё чтение и запись в цветовой буфер закончено — прежде чем что-то делать дальше
+	subpassDependencies[1].srcSubpass = 0; // РЅР°С‡Р°С‚СЊ СЌС‚Сѓ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЋ РїРѕСЃР»Рµ Р·Р°РІРµСЂС€РµРЅРёСЏ 0-РіРѕ subpass'Р° (С‚РѕРіРѕ СЃР°РјРѕРіРѕ, РІ РєРѕС‚РѕСЂРѕРј СЂРёСЃРѕРІР°Р»Рё)
+	subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; //  Р¶РґР°С‚СЊ Р·Р°РІРµСЂС€РµРЅРёСЏ РІС‹РІРѕРґР° С†РІРµС‚Р° РІ Р±СѓС„РµСЂ (РёРјРµРЅРЅРѕ РєРѕРіРґР° РїРёРєСЃРµР»Рё Р±С‹Р»Рё СЂРµР°Р»СЊРЅРѕ РЅР°СЂРёСЃРѕРІР°РЅС‹)
+	subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT; // РЈР±РµРґРёС‚СЊСЃСЏ, С‡С‚Рѕ РІСЃС‘ С‡С‚РµРЅРёРµ Рё Р·Р°РїРёСЃСЊ РІ С†РІРµС‚РѕРІРѕР№ Р±СѓС„РµСЂ Р·Р°РєРѕРЅС‡РµРЅРѕ вЂ” РїСЂРµР¶РґРµ С‡РµРј С‡С‚Рѕ-С‚Рѕ РґРµР»Р°С‚СЊ РґР°Р»СЊС€Рµ
 	// - Destinations -
 	// But must happen before...
-	subpassDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL; // Передать управление наружу — другим частям пайплайна, за пределами render pass (например, системе показа изображения на экран)
-	subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT; // Следующий этап — самый последний, ничего больше не рендерится, только ожидание перед показом изображения
-	subpassDependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT; // Снаружи кто-то будет читать это изображение из памяти (в частности, vkQueuePresentKHR, который показывает кадр на экран)
+	subpassDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL; // РџРµСЂРµРґР°С‚СЊ СѓРїСЂР°РІР»РµРЅРёРµ РЅР°СЂСѓР¶Сѓ вЂ” РґСЂСѓРіРёРј С‡Р°СЃС‚СЏРј РїР°Р№РїР»Р°Р№РЅР°, Р·Р° РїСЂРµРґРµР»Р°РјРё render pass (РЅР°РїСЂРёРјРµСЂ, СЃРёСЃС‚РµРјРµ РїРѕРєР°Р·Р° РёР·РѕР±СЂР°Р¶РµРЅРёСЏ РЅР° СЌРєСЂР°РЅ)
+	subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT; // РЎР»РµРґСѓСЋС‰РёР№ СЌС‚Р°Рї вЂ” СЃР°РјС‹Р№ РїРѕСЃР»РµРґРЅРёР№, РЅРёС‡РµРіРѕ Р±РѕР»СЊС€Рµ РЅРµ СЂРµРЅРґРµСЂРёС‚СЃСЏ, С‚РѕР»СЊРєРѕ РѕР¶РёРґР°РЅРёРµ РїРµСЂРµРґ РїРѕРєР°Р·РѕРј РёР·РѕР±СЂР°Р¶РµРЅРёСЏ
+	subpassDependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT; // РЎРЅР°СЂСѓР¶Рё РєС‚Рѕ-С‚Рѕ Р±СѓРґРµС‚ С‡РёС‚Р°С‚СЊ СЌС‚Рѕ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РёР· РїР°РјСЏС‚Рё (РІ С‡Р°СЃС‚РЅРѕСЃС‚Рё, vkQueuePresentKHR, РєРѕС‚РѕСЂС‹Р№ РїРѕРєР°Р·С‹РІР°РµС‚ РєР°РґСЂ РЅР° СЌРєСЂР°РЅ)
 	// https://registry.khronos.org/vulkan/specs/latest/man/html/VkAccessFlagBits.html
-	subpassDependencies[1].dependencyFlags = 0; // Флаги зависимости, в данном случае не нужны, поэтому 0.
+	subpassDependencies[1].dependencyFlags = 0; // Р¤Р»Р°РіРё Р·Р°РІРёСЃРёРјРѕСЃС‚Рё, РІ РґР°РЅРЅРѕРј СЃР»СѓС‡Р°Рµ РЅРµ РЅСѓР¶РЅС‹, РїРѕСЌС‚РѕРјСѓ 0.
 
 
 	// Create info for Render Pass
-	VkRenderPassCreateInfo renderPassCreateInfo = {}; // Создаётся структура, содержащая всю информацию для создания render pass.
-	renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO; // Тип структуры Vulkan (обязательное поле для всех CreateInfo). 
-	renderPassCreateInfo.attachmentCount = 1; // Указываем, что в этом render pass'е используется 1 attachment —  colourAttachment.
+	VkRenderPassCreateInfo renderPassCreateInfo = {}; // РЎРѕР·РґР°С‘С‚СЃСЏ СЃС‚СЂСѓРєС‚СѓСЂР°, СЃРѕРґРµСЂР¶Р°С‰Р°СЏ РІСЃСЋ РёРЅС„РѕСЂРјР°С†РёСЋ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ render pass.
+	renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO; // РўРёРї СЃС‚СЂСѓРєС‚СѓСЂС‹ Vulkan (РѕР±СЏР·Р°С‚РµР»СЊРЅРѕРµ РїРѕР»Рµ РґР»СЏ РІСЃРµС… CreateInfo). 
+	renderPassCreateInfo.attachmentCount = 1; // РЈРєР°Р·С‹РІР°РµРј, С‡С‚Рѕ РІ СЌС‚РѕРј render pass'Рµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ 1 attachment вЂ”  colourAttachment.
 	renderPassCreateInfo.pAttachments = &colourAttachment;
 	renderPassCreateInfo.subpassCount = 1;
 	renderPassCreateInfo.pSubpasses = &subpass;
@@ -458,14 +458,14 @@ void VulkanRenderer::createGraphicPipeline()
 	//	colorBlendinCraeteInfo.logicOp = VK_LOGIC_OP_COPY;
 
 	//	-- PIPELINE LAYOUT -- (TODO: Apply Future Description Set Layouts)
-	VkPipelineLayoutCreateInfo piplineLayoutCreateInfo = {}; // Это нужно, чтобы поля, которые мы не заполним явно, имели нулевые значения (без мусора).
-	piplineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO; // Vulkan требует, чтобы sType точно указывал тип структуры.
-	piplineLayoutCreateInfo.setLayoutCount = 0; //  количество layout'ов (обычно для uniform buffer, textures и т.д.)
-	piplineLayoutCreateInfo.pSetLayouts = nullptr; // указатель на массив layout'ов (если они есть)
+	VkPipelineLayoutCreateInfo piplineLayoutCreateInfo = {}; // Р­С‚Рѕ РЅСѓР¶РЅРѕ, С‡С‚РѕР±С‹ РїРѕР»СЏ, РєРѕС‚РѕСЂС‹Рµ РјС‹ РЅРµ Р·Р°РїРѕР»РЅРёРј СЏРІРЅРѕ, РёРјРµР»Рё РЅСѓР»РµРІС‹Рµ Р·РЅР°С‡РµРЅРёСЏ (Р±РµР· РјСѓСЃРѕСЂР°).
+	piplineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO; // Vulkan С‚СЂРµР±СѓРµС‚, С‡С‚РѕР±С‹ sType С‚РѕС‡РЅРѕ СѓРєР°Р·С‹РІР°Р» С‚РёРї СЃС‚СЂСѓРєС‚СѓСЂС‹.
+	piplineLayoutCreateInfo.setLayoutCount = 0; //  РєРѕР»РёС‡РµСЃС‚РІРѕ layout'РѕРІ (РѕР±С‹С‡РЅРѕ РґР»СЏ uniform buffer, textures Рё С‚.Рґ.)
+	piplineLayoutCreateInfo.pSetLayouts = nullptr; // СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РјР°СЃСЃРёРІ layout'РѕРІ (РµСЃР»Рё РѕРЅРё РµСЃС‚СЊ)
 	piplineLayoutCreateInfo.pPushConstantRanges = nullptr;
 	/*
-	* Push-константы — быстрый способ передавать мелкие данные (до 128 байт) напрямую в шейдер.
-	* Например, матрицу mat4 или vec4 напрямую — нужно будет указать массив VkPushConstantRange.
+	* Push-РєРѕРЅСЃС‚Р°РЅС‚С‹ вЂ” Р±С‹СЃС‚СЂС‹Р№ СЃРїРѕСЃРѕР± РїРµСЂРµРґР°РІР°С‚СЊ РјРµР»РєРёРµ РґР°РЅРЅС‹Рµ (РґРѕ 128 Р±Р°Р№С‚) РЅР°РїСЂСЏРјСѓСЋ РІ С€РµР№РґРµСЂ.
+	* РќР°РїСЂРёРјРµСЂ, РјР°С‚СЂРёС†Сѓ mat4 РёР»Рё vec4 РЅР°РїСЂСЏРјСѓСЋ вЂ” РЅСѓР¶РЅРѕ Р±СѓРґРµС‚ СѓРєР°Р·Р°С‚СЊ РјР°СЃСЃРёРІ VkPushConstantRange.
 	*/
 
 	// Create Pipeline Layout (if you create - you must destroy)
@@ -476,31 +476,31 @@ void VulkanRenderer::createGraphicPipeline()
 	// TODO: Set up depth stencil testing
 	 
 	// -- GRAPHIC PIPELINE CREATION INFO --
-	VkGraphicsPipelineCreateInfo pipelineCreateInfo = {}; // Создаём структуру пайплайна и обнуляем её (чтобы в памяти не осталось мусора)
-	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO; // Тип структуры — обязательно указывается для Vulkan (всё строго типизировано)
-	pipelineCreateInfo.stageCount = 2;										// Мы используем 2 стадии шейдеров: Вершинный(vertex), Фрагментный
-	pipelineCreateInfo.pStages = shadersStagers;							// Указатель на массив VkPipelineShaderStageCreateInfo, в котором лежат наши скомпилированные шейдеры
-	pipelineCreateInfo.pVertexInputState = &vertexInputCreateInfo;			// Как пайплайн будет интерпретировать входные вершины: формат, структура, атрибуты (позиция, цвет и т.д.)
-	pipelineCreateInfo.pInputAssemblyState = &assemblyCreateInfo;			// Указывает, как собирать вершины: треугольники, линии, точки (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST и т.п.)
-	pipelineCreateInfo.pViewportState = &viewportStateCreateInfo;			// Настройки viewport'а и scissor'а — то есть, куда и в какой области экрана рисовать
-	pipelineCreateInfo.pDynamicState = nullptr;								// Говорим: "Мы не используем динамические настройки (например, менять viewport на лету)." Можно включить позже для гибкости
-	pipelineCreateInfo.pRasterizationState = &rasterizationCreateInfo;		// Как преобразовывать примитивы в пиксели: Заполнять-(fill mode), Нарисовать только границу-Culling(не показывать задние стороны треугольников), Polygon mode и т.д.
-	pipelineCreateInfo.pMultisampleState = &multisamplingCreateInfo;		// Настройки мультисемплинга (MSAA), если используешь сглаживание
-	pipelineCreateInfo.pColorBlendState = &colorBlendinCraeteInfo;			// Как смешивать цвета (например, если рисуешь прозрачные объекты или делаешь альфа-блендинг)
-	pipelineCreateInfo.pDepthStencilState = nullptr;						// не используется буфер глубины (z-buffer) или трафарет. Можно подключить позже, если делается 3D
-	pipelineCreateInfo.layout = pipelineLayout;								// Содержит layout дескрипторов и push-констант. Определяет, как GPU получает доступ к uniform'ам и ресурсам (текстурам и т.д.)
-	pipelineCreateInfo.renderPass = renderPass;								// Привязываем пайплайн к render pass — то есть, указываем, куда он будет рендерить
-	pipelineCreateInfo.subpass = 0;											// Указываем, что пайплайн будет использовать первый (и единственный) subpass в этом render pass.
+	VkGraphicsPipelineCreateInfo pipelineCreateInfo = {}; // РЎРѕР·РґР°С‘Рј СЃС‚СЂСѓРєС‚СѓСЂСѓ РїР°Р№РїР»Р°Р№РЅР° Рё РѕР±РЅСѓР»СЏРµРј РµС‘ (С‡С‚РѕР±С‹ РІ РїР°РјСЏС‚Рё РЅРµ РѕСЃС‚Р°Р»РѕСЃСЊ РјСѓСЃРѕСЂР°)
+	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO; // РўРёРї СЃС‚СЂСѓРєС‚СѓСЂС‹ вЂ” РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ СѓРєР°Р·С‹РІР°РµС‚СЃСЏ РґР»СЏ Vulkan (РІСЃС‘ СЃС‚СЂРѕРіРѕ С‚РёРїРёР·РёСЂРѕРІР°РЅРѕ)
+	pipelineCreateInfo.stageCount = 2;										// РњС‹ РёСЃРїРѕР»СЊР·СѓРµРј 2 СЃС‚Р°РґРёРё С€РµР№РґРµСЂРѕРІ: Р’РµСЂС€РёРЅРЅС‹Р№(vertex), Р¤СЂР°РіРјРµРЅС‚РЅС‹Р№
+	pipelineCreateInfo.pStages = shadersStagers;							// РЈРєР°Р·Р°С‚РµР»СЊ РЅР° РјР°СЃСЃРёРІ VkPipelineShaderStageCreateInfo, РІ РєРѕС‚РѕСЂРѕРј Р»РµР¶Р°С‚ РЅР°С€Рё СЃРєРѕРјРїРёР»РёСЂРѕРІР°РЅРЅС‹Рµ С€РµР№РґРµСЂС‹
+	pipelineCreateInfo.pVertexInputState = &vertexInputCreateInfo;			// РљР°Рє РїР°Р№РїР»Р°Р№РЅ Р±СѓРґРµС‚ РёРЅС‚РµСЂРїСЂРµС‚РёСЂРѕРІР°С‚СЊ РІС…РѕРґРЅС‹Рµ РІРµСЂС€РёРЅС‹: С„РѕСЂРјР°С‚, СЃС‚СЂСѓРєС‚СѓСЂР°, Р°С‚СЂРёР±СѓС‚С‹ (РїРѕР·РёС†РёСЏ, С†РІРµС‚ Рё С‚.Рґ.)
+	pipelineCreateInfo.pInputAssemblyState = &assemblyCreateInfo;			// РЈРєР°Р·С‹РІР°РµС‚, РєР°Рє СЃРѕР±РёСЂР°С‚СЊ РІРµСЂС€РёРЅС‹: С‚СЂРµСѓРіРѕР»СЊРЅРёРєРё, Р»РёРЅРёРё, С‚РѕС‡РєРё (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST Рё С‚.Рї.)
+	pipelineCreateInfo.pViewportState = &viewportStateCreateInfo;			// РќР°СЃС‚СЂРѕР№РєРё viewport'Р° Рё scissor'Р° вЂ” С‚Рѕ РµСЃС‚СЊ, РєСѓРґР° Рё РІ РєР°РєРѕР№ РѕР±Р»Р°СЃС‚Рё СЌРєСЂР°РЅР° СЂРёСЃРѕРІР°С‚СЊ
+	pipelineCreateInfo.pDynamicState = nullptr;								// Р“РѕРІРѕСЂРёРј: "РњС‹ РЅРµ РёСЃРїРѕР»СЊР·СѓРµРј РґРёРЅР°РјРёС‡РµСЃРєРёРµ РЅР°СЃС‚СЂРѕР№РєРё (РЅР°РїСЂРёРјРµСЂ, РјРµРЅСЏС‚СЊ viewport РЅР° Р»РµС‚Сѓ)." РњРѕР¶РЅРѕ РІРєР»СЋС‡РёС‚СЊ РїРѕР·Р¶Рµ РґР»СЏ РіРёР±РєРѕСЃС‚Рё
+	pipelineCreateInfo.pRasterizationState = &rasterizationCreateInfo;		// РљР°Рє РїСЂРµРѕР±СЂР°Р·РѕРІС‹РІР°С‚СЊ РїСЂРёРјРёС‚РёРІС‹ РІ РїРёРєСЃРµР»Рё: Р—Р°РїРѕР»РЅСЏС‚СЊ-(fill mode), РќР°СЂРёСЃРѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РіСЂР°РЅРёС†Сѓ-Culling(РЅРµ РїРѕРєР°Р·С‹РІР°С‚СЊ Р·Р°РґРЅРёРµ СЃС‚РѕСЂРѕРЅС‹ С‚СЂРµСѓРіРѕР»СЊРЅРёРєРѕРІ), Polygon mode Рё С‚.Рґ.
+	pipelineCreateInfo.pMultisampleState = &multisamplingCreateInfo;		// РќР°СЃС‚СЂРѕР№РєРё РјСѓР»СЊС‚РёСЃРµРјРїР»РёРЅРіР° (MSAA), РµСЃР»Рё РёСЃРїРѕР»СЊР·СѓРµС€СЊ СЃРіР»Р°Р¶РёРІР°РЅРёРµ
+	pipelineCreateInfo.pColorBlendState = &colorBlendinCraeteInfo;			// РљР°Рє СЃРјРµС€РёРІР°С‚СЊ С†РІРµС‚Р° (РЅР°РїСЂРёРјРµСЂ, РµСЃР»Рё СЂРёСЃСѓРµС€СЊ РїСЂРѕР·СЂР°С‡РЅС‹Рµ РѕР±СЉРµРєС‚С‹ РёР»Рё РґРµР»Р°РµС€СЊ Р°Р»СЊС„Р°-Р±Р»РµРЅРґРёРЅРі)
+	pipelineCreateInfo.pDepthStencilState = nullptr;						// РЅРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ Р±СѓС„РµСЂ РіР»СѓР±РёРЅС‹ (z-buffer) РёР»Рё С‚СЂР°С„Р°СЂРµС‚. РњРѕР¶РЅРѕ РїРѕРґРєР»СЋС‡РёС‚СЊ РїРѕР·Р¶Рµ, РµСЃР»Рё РґРµР»Р°РµС‚СЃСЏ 3D
+	pipelineCreateInfo.layout = pipelineLayout;								// РЎРѕРґРµСЂР¶РёС‚ layout РґРµСЃРєСЂРёРїС‚РѕСЂРѕРІ Рё push-РєРѕРЅСЃС‚Р°РЅС‚. РћРїСЂРµРґРµР»СЏРµС‚, РєР°Рє GPU РїРѕР»СѓС‡Р°РµС‚ РґРѕСЃС‚СѓРї Рє uniform'Р°Рј Рё СЂРµСЃСѓСЂСЃР°Рј (С‚РµРєСЃС‚СѓСЂР°Рј Рё С‚.Рґ.)
+	pipelineCreateInfo.renderPass = renderPass;								// РџСЂРёРІСЏР·С‹РІР°РµРј РїР°Р№РїР»Р°Р№РЅ Рє render pass вЂ” С‚Рѕ РµСЃС‚СЊ, СѓРєР°Р·С‹РІР°РµРј, РєСѓРґР° РѕРЅ Р±СѓРґРµС‚ СЂРµРЅРґРµСЂРёС‚СЊ
+	pipelineCreateInfo.subpass = 0;											// РЈРєР°Р·С‹РІР°РµРј, С‡С‚Рѕ РїР°Р№РїР»Р°Р№РЅ Р±СѓРґРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РїРµСЂРІС‹Р№ (Рё РµРґРёРЅСЃС‚РІРµРЅРЅС‹Р№) subpass РІ СЌС‚РѕРј render pass.
 
 	// Pipeline Derivatives : Can create multi pipelines that derive from one another for optimisation
 	pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE; // Existing pipeline to derive from...
-	// Это полезно, если надо создать 100 пайплайнов, которые отличаются буквально одной настройкой (например, шейдером или блендингом).
-	pipelineCreateInfo.basePipelineIndex = -1; // `-1`= не используется наследование по индексу
-	// Альтернативный способ указать пайплайн, от которого можно наследоваться — по индексу внутри массива VkGraphicsPipelineCreateInfo, если ты создаёшь несколько пайплайнов за один вызов vkCreateGraphicsPipelines.
+	// Р­С‚Рѕ РїРѕР»РµР·РЅРѕ, РµСЃР»Рё РЅР°РґРѕ СЃРѕР·РґР°С‚СЊ 100 РїР°Р№РїР»Р°Р№РЅРѕРІ, РєРѕС‚РѕСЂС‹Рµ РѕС‚Р»РёС‡Р°СЋС‚СЃСЏ Р±СѓРєРІР°Р»СЊРЅРѕ РѕРґРЅРѕР№ РЅР°СЃС‚СЂРѕР№РєРѕР№ (РЅР°РїСЂРёРјРµСЂ, С€РµР№РґРµСЂРѕРј РёР»Рё Р±Р»РµРЅРґРёРЅРіРѕРј).
+	pipelineCreateInfo.basePipelineIndex = -1; // `-1`= РЅРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РЅР°СЃР»РµРґРѕРІР°РЅРёРµ РїРѕ РёРЅРґРµРєСЃСѓ
+	// РђР»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Р№ СЃРїРѕСЃРѕР± СѓРєР°Р·Р°С‚СЊ РїР°Р№РїР»Р°Р№РЅ, РѕС‚ РєРѕС‚РѕСЂРѕРіРѕ РјРѕР¶РЅРѕ РЅР°СЃР»РµРґРѕРІР°С‚СЊСЃСЏ вЂ” РїРѕ РёРЅРґРµРєСЃСѓ РІРЅСѓС‚СЂРё РјР°СЃСЃРёРІР° VkGraphicsPipelineCreateInfo, РµСЃР»Рё С‚С‹ СЃРѕР·РґР°С‘С€СЊ РЅРµСЃРєРѕР»СЊРєРѕ РїР°Р№РїР»Р°Р№РЅРѕРІ Р·Р° РѕРґРёРЅ РІС‹Р·РѕРІ vkCreateGraphicsPipelines.
 
 	// Create the Graphics Pipeline
 	result = vkCreateGraphicsPipelines(mainDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline);
-	// Эта функция создаёт графический пайплайн (pipeline), т.е. весь "маршрут", по которому данные проходят через GPU — от вершин до вывода на экран.
+	// Р­С‚Р° С„СѓРЅРєС†РёСЏ СЃРѕР·РґР°С‘С‚ РіСЂР°С„РёС‡РµСЃРєРёР№ РїР°Р№РїР»Р°Р№РЅ (pipeline), С‚.Рµ. РІРµСЃСЊ "РјР°СЂС€СЂСѓС‚", РїРѕ РєРѕС‚РѕСЂРѕРјСѓ РґР°РЅРЅС‹Рµ РїСЂРѕС…РѕРґСЏС‚ С‡РµСЂРµР· GPU вЂ” РѕС‚ РІРµСЂС€РёРЅ РґРѕ РІС‹РІРѕРґР° РЅР° СЌРєСЂР°РЅ.
 	if (result != VK_SUCCESS) throw std::runtime_error("Failed to create a Graphics Pipeline!");
 
 	// Destroy Shader Modules, no longer needed after Pipeline created
@@ -535,11 +535,11 @@ void VulkanRenderer::getPhysicalDevice()
 bool VulkanRenderer::checkInstanceExtensionSupport(std::vector<const char*>* checkExtensions)
 {
 	// Need to get number of extension to create array of correct size to hold extensions
-	uint32_t extensionCount = 0; // создаем счётчик, что бы вывести кол-во расширений из этой переменной
-	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr); // получаем кол-во расширений из Vulkan функции
+	uint32_t extensionCount = 0; // СЃРѕР·РґР°РµРј СЃС‡С‘С‚С‡РёРє, С‡С‚Рѕ Р±С‹ РІС‹РІРµСЃС‚Рё РєРѕР»-РІРѕ СЂР°СЃС€РёСЂРµРЅРёР№ РёР· СЌС‚РѕР№ РїРµСЂРµРјРµРЅРЅРѕР№
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr); // РїРѕР»СѓС‡Р°РµРј РєРѕР»-РІРѕ СЂР°СЃС€РёСЂРµРЅРёР№ РёР· Vulkan С„СѓРЅРєС†РёРё
 
 	// Create a list VkExtensionProperties using count
-	std::vector<VkExtensionProperties> extensions(extensionCount); // создаем вектор/массив нужной длинны, а то есть то число, которе выдаст функий с кол-вом расширений
+	std::vector<VkExtensionProperties> extensions(extensionCount); // СЃРѕР·РґР°РµРј РІРµРєС‚РѕСЂ/РјР°СЃСЃРёРІ РЅСѓР¶РЅРѕР№ РґР»РёРЅРЅС‹, Р° С‚Рѕ РµСЃС‚СЊ С‚Рѕ С‡РёСЃР»Рѕ, РєРѕС‚РѕСЂРµ РІС‹РґР°СЃС‚ С„СѓРЅРєРёР№ СЃ РєРѕР»-РІРѕРј СЂР°СЃС€РёСЂРµРЅРёР№
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data()); 
 
 	// Check if given extensions are in list of available extensions

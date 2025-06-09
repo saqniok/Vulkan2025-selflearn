@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <fstream>
 
@@ -24,8 +24,8 @@ struct SwapChainDetails {
 	std::vector<VkPresentModeKHR> presentationModes;		// How images should be presented to screen
 };
 
-/* Создаем тип, который обьеденяет VkImage и VkImageView, потому что мы хотим эти данные иметь в одном месте.
-*	без этой структуры, код выглядел бы так
+/* РЎРѕР·РґР°РµРј С‚РёРї, РєРѕС‚РѕСЂС‹Р№ РѕР±СЊРµРґРµРЅСЏРµС‚ VkImage Рё VkImageView, РїРѕС‚РѕРјСѓ С‡С‚Рѕ РјС‹ С…РѕС‚РёРј СЌС‚Рё РґР°РЅРЅС‹Рµ РёРјРµС‚СЊ РІ РѕРґРЅРѕРј РјРµСЃС‚Рµ.
+*	Р±РµР· СЌС‚РѕР№ СЃС‚СЂСѓРєС‚СѓСЂС‹, РєРѕРґ РІС‹РіР»СЏРґРµР» Р±С‹ С‚Р°Рє
 *	std::vector<VkImage> image;
 *	std::vector<VkImageView;
 */
@@ -45,7 +45,7 @@ static std::vector<char> readFile(const std::string& filename)
 	if (!file.is_open()) throw std::runtime_error("Failed to open a file!");
 
 	size_t fileSize = (size_t)file.tellg();	// tellg - Tell get-Position
-	std::vector<char> fileBuffer(fileSize); // мы теперь знаем размер файла, потому что std::ios::ate показывает последний байт
+	std::vector<char> fileBuffer(fileSize); // РјС‹ С‚РµРїРµСЂСЊ Р·РЅР°РµРј СЂР°Р·РјРµСЂ С„Р°Р№Р»Р°, РїРѕС‚РѕРјСѓ С‡С‚Рѕ std::ios::ate РїРѕРєР°Р·С‹РІР°РµС‚ РїРѕСЃР»РµРґРЅРёР№ Р±Р°Р№С‚
 
 	// Move read position (seek to) the start of the file
 	file.seekg(0);
