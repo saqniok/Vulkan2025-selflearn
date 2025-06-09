@@ -7,7 +7,7 @@ VulkanRenderer::VulkanRenderer()
 int VulkanRenderer::init(GLFWwindow* newWindow)
 {
 
-	window = newWindow;
+	window = newWindow; // Сохраняем переданное окно (GLFWwindow*) в член класса window, чтобы использовать его внутри других методов (createSurface, например).
 
 	try {
 		createIntstance();
@@ -15,11 +15,14 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		getPhysicalDevice();
 		createLogicalDevice();
 		createSwapChain();
+		createRenderPass();
 		createGraphicPipeline();
 	}
 	catch (const std::runtime_error& e) {
 		printf("ERROR: %s\n", e.what());
 		return EXIT_FAILURE;
+		// Если на любом этапе произойдёт ошибка (например, не найден GPU или не удалось создать swapchain),
+		// программа поймает std::runtime_error и выведет сообщение.
 	}
 
 	return 0;
@@ -27,11 +30,13 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 
 void VulkanRenderer::cleanup()
 {
+	vkDestroyPipelineLayout(mainDevice.logicalDevice, pipelineLayout, nullptr);
 	for (auto image : swapChainImages) vkDestroyImageView(mainDevice.logicalDevice, image.imageView, nullptr);
 	vkDestroySwapchainKHR(mainDevice.logicalDevice, swapchain, nullptr);
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyDevice(mainDevice.logicalDevice, nullptr);
 	vkDestroyInstance(instance, nullptr);
+
 }
 
 VulkanRenderer::~VulkanRenderer()
@@ -231,6 +236,48 @@ void VulkanRenderer::createSwapChain()
 	}
 }
 
+void VulkanRenderer::createRenderPass()
+{
+	//Color attachment of render pass
+	VkAttachmentDescription colourAttachment = {}; // Создаётся структура, описывающая один цветовой буфер (attachment), который будет использоваться в render pass'е.
+	colourAttachment.format = swapChainImageFormat; // Указываем формат пикселей, с которым будет работать этот буфер.
+	colourAttachment.samples = VK_SAMPLE_COUNT_1_BIT; // один сэмпл на пиксель, т.е. без MSAA (anti-aliasing).
+	/*
+	* Если включать MSAA, то здесь нужно будет поставить VK_SAMPLE_COUNT_4_BIT или выше,
+	* а потом разрешать результат в отдельный буфер.
+	*/
+	colourAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;				// Очищает буфер перед началом рендерингом.
+	colourAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;			// После окончания рендеринга — результат сохраняется (чтобы показать на экране).
+	colourAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;	// Не использует трафарет 
+	colourAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // Не сохраняет трафрает
+
+	// Framebuffer data will be stored as an image, but images can be given different data layouts
+	// to give optimal use for certain operations in the pipeline
+	colourAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; //  перед рендерингом изображение не имеет определёного формата
+	colourAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // после рендеринга изображение будет готово к показу на экране
+
+	// Attachment reference uses an attachment index that refers to index in the attachment list passed to renderPassCreateInfo
+	VkAttachmentReference colourAttachmentReference = {}; // Создаётся объект, который будет использоваться внутри subpass'а и указывает, какой attachment и в каком layout использовать.
+	colourAttachmentReference.attachment = 0; // Индекс attachment'а — это первый (и единственный) attachment в pAttachments.
+	colourAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // Layout, в котором attachment будет использоваться во время рендеринга. COLOR_ATTACHMENT_OPTIMAL — лучший вариант для записи в цветовой буфер.
+
+	// Information about a particular subopass the Render Pass is using
+	VkSubpassDescription subpass = {}; // Создаётся описание подпрохода (subpass), который будет использоваться в render pass.
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // Subpass будет использоваться в графическом пайплайне (не compute и не raytracing).
+	subpass.colorAttachmentCount = 1; // У subpass'а будет один цветовой буфер — ссылка на colourAttachmentReference.
+	subpass.pColorAttachments = &colourAttachmentReference;
+
+	// Необходимо определить, когда происходят переходы между макетами, используя зависимости от subpass
+
+
+	VkRenderPassCreateInfo renderPassCreateInfo = {}; // Создаётся структура, содержащая всю информацию для создания render pass.
+	renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO; // Тип структуры Vulkan (обязательное поле для всех CreateInfo). 
+	renderPassCreateInfo.attachmentCount = 1; // Указываем, что в этом render pass'е используется 1 attachment —  colourAttachment.
+	renderPassCreateInfo.pAttachments = &colourAttachment;
+	renderPassCreateInfo.subpassCount = 1;
+	renderPassCreateInfo.pSubpasses = &subpass;
+}
+
 void VulkanRenderer::createGraphicPipeline()
 {
 	// Read in SPIR-V code of shaders
@@ -360,8 +407,24 @@ void VulkanRenderer::createGraphicPipeline()
 	colorBlendinCraeteInfo.pAttachments = &colorStateAttachments;
 	//	colorBlendinCraeteInfo.logicOp = VK_LOGIC_OP_COPY;
 
-	//	Create PIPELINE
-	
+	//	-- PIPELINE LAYOUT -- (TODO: Apply Future Description Set Layouts)
+	VkPipelineLayoutCreateInfo piplineLayoutCreateInfo = {}; // Это нужно, чтобы поля, которые мы не заполним явно, имели нулевые значения (без мусора).
+	piplineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO; // Vulkan требует, чтобы sType точно указывал тип структуры.
+	piplineLayoutCreateInfo.setLayoutCount = 0; //  количество layout'ов (обычно для uniform buffer, textures и т.д.)
+	piplineLayoutCreateInfo.pSetLayouts = nullptr; // указатель на массив layout'ов (если они есть)
+	piplineLayoutCreateInfo.pPushConstantRanges = nullptr;
+	/*
+	* Push-константы — быстрый способ передавать мелкие данные (до 128 байт) напрямую в шейдер.
+	* Например, матрицу mat4 или vec4 напрямую — нужно будет указать массив VkPushConstantRange.
+	*/
+
+	// Create Pipeline Layout (if you create - you must destroy)
+	VkResult result = vkCreatePipelineLayout(mainDevice.logicalDevice, &piplineLayoutCreateInfo, nullptr, &pipelineLayout);
+	if (result != VK_SUCCESS) throw std::runtime_error("Failed to create Pipeline Layout!");
+
+	// -- DEPTH STENCIL TESTING --
+	// TODO: Set up depth stencil testing
+	 
 	// Destroy Shader Modules, no longer needed after Pipeline created
 	vkDestroyShaderModule(mainDevice.logicalDevice, fragmentShaderModule, nullptr);
 	vkDestroyShaderModule(mainDevice.logicalDevice, vertexShaderModule, nullptr);

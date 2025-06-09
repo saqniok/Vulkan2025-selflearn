@@ -51,17 +51,66 @@ private:
 	// Есть созданый тип SwapchainImage, включающий в себя VkImage и VkImageView, мы создаем вектор обьектов
 	std::vector<SwapchainImage> swapChainImages;	
 
+	// - Pipeline components
+	VkPipelineLayout pipelineLayout;
+
 	// - Utility
 	VkFormat swapChainImageFormat;		//	Формат пикселей изображений из swapchain. Например, VK_FORMAT_B8G8R8A8_SRGB — 8 бит на канал, включая альфу.
 	VkExtent2D swapChainExtent;			//	Размер swapchain-а (ширина и высота картинки, которую ты рендеришь).
 
 	// Vulkan Functions
 	// - Create Functions
-	void createIntstance();
-	void createLogicalDevice();
-	void createSurface();
-	void createSwapChain();
-	void createGraphicPipeline();
+	void createIntstance(); // корневой объект Vulkan.
+	/**
+	* Внутри:
+	*	Название приложения,	
+	*	Версию Vulkan,	
+	*	Расширения (например, VK_KHR_surface),
+	*	Валидационные слои (например, VK_LAYER_KHRONOS_validation).
+	*/
+
+	void createLogicalDevice(); // Создаёт логическое устройство (VkDevice) для выбранного GPU.
+	/*
+	* Внутри:
+	*	Настраиваются очереди: graphics, present, compute и т.д.
+	*	Указываются расширения (VK_KHR_swapchain обязательно).
+	*	Получаешь VkQueue — чтобы отправлять команды в GPU.
+	*/
+
+	void createSurface(); // Создаёт surface (VkSurfaceKHR) — поверхность вывода для окна.
+	/*
+	*	Она нужна, чтобы Vulkan понимал, куда рендерить (в окно).
+	*	GLFW умеет создавать surface через glfwCreateWindowSurface(instance, window, ...).
+	*	Этот объект используется позже при создании swapchain.
+	*/
+
+	void createSwapChain(); // Cоздаёт swapchain — цепочку изображений, которые будут отображаться на экране поочерёдно.
+	/*
+	*	формат изображения (VkFormat, например, VK_FORMAT_B8G8R8A8_UNORM),
+	*	количество буферов (обычно 2 или 3),
+	*	режим синхронизации (vsync или нет),
+	*	разрешение и surface capabilities.
+	*/
+
+	void createRenderPass(); // Создаёт render pass — это описание этапов отрисовки кадра.
+	/*
+	*	Сколько буферов (color, depth, stencil),
+	*	Как они очищаются,
+	*	Какой layout используется до/после рендеринга,
+	*	Какие подпроходы (subpasses).
+	*/
+
+	void createGraphicPipeline(); // Создаёт графический пайплайн (VkPipeline) — самый сложный объект.
+	/*
+	*	vertex/fragment шейдеры,
+	*	структура вершин (binding + attributes),
+	*	viewport + scissor,
+	*	rasterization,
+	*	blending,
+	*	pipeline layout (с push-константами и дескрипторами),
+	*	render pass, с которым pipeline будет совместим.
+	*/
+
 
 	// - Get Functions
 	void getPhysicalDevice();
