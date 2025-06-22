@@ -551,6 +551,24 @@ void VulkanRenderer::createCommandPool()
 	if (result != VK_SUCCESS) { throw std::runtime_error("Failed to create Command Pool!"); }
 }
 
+void VulkanRenderer::createCommandBuffers()
+{
+	// Resize command buffers to match swap chain framebuffers
+	commandBuffers.resize(swapChainFramebuffers.size());
+
+	VkCommandBufferAllocateInfo cbAllocateInfo = {};
+	cbAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	cbAllocateInfo.commandPool = graphicsCommandPools; // Command pool to allocate from
+	cbAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	// PRIMARY - buffer you submit to queue. Can't be called from other buffers
+	// SECONDARY - buffer that can be called from other buffers, but can't be submitted to queue directly
+	cbAllocateInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size()); // Number of command buffers to allocate
+
+	// Allocate command buffers and place handles in array of buffers
+	VkResult result = vkAllocateCommandBuffers(mainDevice.logicalDevice, &cbAllocateInfo, commandBuffers.data());
+	if (result != VK_SUCCESS) { throw std::runtime_error("Failed to allocate Command Buffers!"); }
+}
+
 void VulkanRenderer::getPhysicalDevice()
 {
 	// Enumerate Physical devices the vkInstance can access

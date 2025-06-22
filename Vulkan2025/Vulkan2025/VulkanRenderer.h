@@ -50,9 +50,9 @@ private:
 	VkSwapchainKHR swapchain;						//	Это набор изображений, между которыми перелючается, что бы показать картинку на экран
 	
 	// Есть созданый тип SwapchainImage, включающий в себя VkImage и VkImageView, мы создаем вектор обьектов
-	std::vector<SwapchainImage> swapChainImages;	
-	std::vector<VkFramebuffer> swapChainFramebuffers; // Буферы для каждого изображения в swapchain, которые используются для рендериинга
-
+	std::vector<SwapchainImage> swapChainImages;		// Изображения из swapchain, которые будут использоваться для рендеринга. Каждый элемент содержит VkImage и VkImageView
+	std::vector<VkFramebuffer> swapChainFramebuffers;	// Буферы для каждого изображения в swapchain, которые используются для рендериинга
+	std::vector<VkCommandBuffer> commandBuffers;		// Командные буферы, которые содержат команды для отрисовки кадра. Они отправляются в очередь для выполнения на GPU
 
 	// - Pipeline components
 	VkPipeline graphicsPipeline;
@@ -123,6 +123,7 @@ private:
 
 	void createCommandPool(); // Создает пул команд для графических операций
 
+	void createCommandBuffers(); // Создает командные буферы для отрисовки кадра
 
 	// - Get Functions
 	void getPhysicalDevice();
