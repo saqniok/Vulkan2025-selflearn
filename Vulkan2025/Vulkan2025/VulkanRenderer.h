@@ -59,6 +59,9 @@ private:
 	VkPipelineLayout pipelineLayout;
 	VkRenderPass renderPass;
 
+	// - Pools
+	VkCommandPool graphicsCommandPools; // Пул команд для графических операций, например, отрисовка
+
 	// - Utility
 	VkFormat swapChainImageFormat;		//	Формат пикселей изображений из swapchain. Например, VK_FORMAT_B8G8R8A8_SRGB — 8 бит на канал, включая альфу.
 	VkExtent2D swapChainExtent;			//	Размер swapchain-а (ширина и высота картинки, которую ты рендеришь).
@@ -117,6 +120,8 @@ private:
 	*/
 
 	void createFramebuffers(); // Создает фреймбуферы для каждого изображения в swapchain
+
+	void createCommandPool(); // Создает пул команд для графических операций
 
 
 	// - Get Functions

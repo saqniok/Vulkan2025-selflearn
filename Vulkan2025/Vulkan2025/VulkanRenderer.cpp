@@ -30,6 +30,8 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 
 void VulkanRenderer::cleanup()
 {	
+	vkDestroyCommandPool(mainDevice.logicalDevice, graphicsCommandPools, nullptr);
+
 	for (auto framebuffer : swapChainFramebuffers) { vkDestroyFramebuffer(mainDevice.logicalDevice, framebuffer, nullptr); }
 
 	vkDestroyPipeline(mainDevice.logicalDevice, graphicsPipeline, nullptr);			//reverse destorying agains creating
@@ -533,6 +535,20 @@ void VulkanRenderer::createFramebuffers()
 		VkResult result = vkCreateFramebuffer(mainDevice.logicalDevice, &framebufferCreateInfo, nullptr, &swapChainFramebuffers[i]);
 		if (result != VK_SUCCESS) throw std::runtime_error("Failed to create Framebuffer!");
 	}
+}
+
+void VulkanRenderer::createCommandPool()
+{
+	// Get indecies of queue families from decice
+	QueueFamilyIndices queueFamilyIndices = getQueueFamilies(mainDevice.physicalDevice);
+
+	VkCommandPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily; // Queue family type that buffers from this commandPool woll use
+	
+	// Create a Graphics Queue Family Command Pool
+	VkResult result = vkCreateCommandPool(mainDevice.logicalDevice, &poolInfo, nullptr, &graphicsCommandPools);
+	if (result != VK_SUCCESS) { throw std::runtime_error("Failed to create Command Pool!"); }
 }
 
 void VulkanRenderer::getPhysicalDevice()
