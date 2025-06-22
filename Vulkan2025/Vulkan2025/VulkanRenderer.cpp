@@ -30,10 +30,14 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 
 void VulkanRenderer::cleanup()
 {	
+	for (auto framebuffer : swapChainFramebuffers) { vkDestroyFramebuffer(mainDevice.logicalDevice, framebuffer, nullptr); }
+
 	vkDestroyPipeline(mainDevice.logicalDevice, graphicsPipeline, nullptr);			//reverse destorying agains creating
 	vkDestroyPipelineLayout(mainDevice.logicalDevice, pipelineLayout, nullptr);		//reverse destorying agains creating
 	vkDestroyRenderPass(mainDevice.logicalDevice, renderPass, nullptr);				//reverse destorying agains creating
+
 	for (auto image : swapChainImages) vkDestroyImageView(mainDevice.logicalDevice, image.imageView, nullptr);
+
 	vkDestroySwapchainKHR(mainDevice.logicalDevice, swapchain, nullptr);
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyDevice(mainDevice.logicalDevice, nullptr);
@@ -506,6 +510,29 @@ void VulkanRenderer::createGraphicPipeline()
 	// Destroy Shader Modules, no longer needed after Pipeline created
 	vkDestroyShaderModule(mainDevice.logicalDevice, fragmentShaderModule, nullptr);
 	vkDestroyShaderModule(mainDevice.logicalDevice, vertexShaderModule, nullptr);
+}
+
+void VulkanRenderer::createFramebuffers()
+{	
+	// Resize framebuffers to match swap chain images
+	swapChainFramebuffers.resize(swapChainImages.size());
+
+	// Create Framebuffers for each swap chain image
+	for (size_t i = 0; i < swapChainFramebuffers.size(); i++)
+	{	
+		std::array<VkImageView, 1> attachments = { swapChainImages[i].imageView };
+
+		VkFramebufferCreateInfo framebufferCreateInfo = {};
+		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO; // Type of structure
+		framebufferCreateInfo.renderPass = renderPass;											// реднер-пасс, к которому будет привязан этот фреймбуффер
+		framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());		// Это кол-во цветовых буферов, которые будут использоваться в этом framebuffer
+		framebufferCreateInfo.width = swapChainExtent.width;									// Ширина фреймбуффера, которая должна совпадать с шириной swapChain	
+		framebufferCreateInfo.height = swapChainExtent.height;									// Высота фреймбуффера, которая должна совпадать с высотой swapChain	
+		framebufferCreateInfo.layers = 1;														// Кол-во слоёв в этом framebuffer (обычно 1, но можно использовать 3D текстуры или кубические карты)
+	
+		VkResult result = vkCreateFramebuffer(mainDevice.logicalDevice, &framebufferCreateInfo, nullptr, &swapChainFramebuffers[i]);
+		if (result != VK_SUCCESS) throw std::runtime_error("Failed to create Framebuffer!");
+	}
 }
 
 void VulkanRenderer::getPhysicalDevice()

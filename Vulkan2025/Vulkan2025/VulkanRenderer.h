@@ -12,7 +12,7 @@
 						*/
 #include <vector>		// динамический массив TODO: покапатся в этих массивах и понять что такое push_back
 #include <set>			// std::set отсортировывает уникальлные элементы, исключает дубли.
-#include <algorithm>	// алшоритмы STL: find, sort, cout, min, max...
+#include <algorithm>	// алгоритмы STL: find, sort, cout, min, max...
 #include <array>		// std::array - статический массив, размер которого задается при компиляции, в отличии от std::vector, который динамический	
 
 #include "Utilities.h"
@@ -51,6 +51,8 @@ private:
 	
 	// Есть созданый тип SwapchainImage, включающий в себя VkImage и VkImageView, мы создаем вектор обьектов
 	std::vector<SwapchainImage> swapChainImages;	
+	std::vector<VkFramebuffer> swapChainFramebuffers; // Буферы для каждого изображения в swapchain, которые используются для рендериинга
+
 
 	// - Pipeline components
 	VkPipeline graphicsPipeline;
@@ -113,6 +115,8 @@ private:
 	*	pipeline layout (с push-константами и дескрипторами),
 	*	render pass, с которым pipeline будет совместим.
 	*/
+
+	void createFramebuffers(); // Создает фреймбуферы для каждого изображения в swapchain
 
 
 	// - Get Functions
