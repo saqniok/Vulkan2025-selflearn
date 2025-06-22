@@ -125,6 +125,9 @@ private:
 
 	void createCommandBuffers(); // Создает командные буферы для отрисовки кадра
 
+	// - Record Functions
+	void recordCommands(); // Записывает команды отрисовки в командные буферы
+
 	// - Get Functions
 	void getPhysicalDevice();
 

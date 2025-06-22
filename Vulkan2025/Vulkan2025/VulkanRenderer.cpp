@@ -569,6 +569,50 @@ void VulkanRenderer::createCommandBuffers()
 	if (result != VK_SUCCESS) { throw std::runtime_error("Failed to allocate Command Buffers!"); }
 }
 
+void VulkanRenderer::recordCommands()
+{
+	// Information about how to begin each command buffer
+	VkCommandBufferBeginInfo bufferBeginInfo = {};
+	bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	bufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT; // Allow command buffer to be used simultaneously by multiple queues
+
+	// Info about how to begin RenderPass, only for graphic application
+	VkRenderPassBeginInfo renderPassBeginInfo = {};
+	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;	// Type of structure
+	renderPassBeginInfo.renderPass = renderPass;
+	renderPassBeginInfo.renderArea.offset = { 0, 0 };						// Offset of render area in framebuffer in pixels	
+	renderPassBeginInfo.renderArea.extent = swapChainExtent;				// Size of render area in pixels, must match framebuffer size
+	VkClearValue clearValues[] = { {0.6f, 0.65f, 0.4, 1.f } };				// { R, G, B, A } - Clear color for the framebuffer, IN FUTURE we can add more clear values for depth, stencil, etc.
+	renderPassBeginInfo.pClearValues = clearValues;							// Pointer to array of clear values, used to clear framebuffer before rendering
+	renderPassBeginInfo.clearValueCount = 1;								// Number of clear values in array, must match number of attachments in render pass
+	// renderPassBeginInfo.framebuffer need to be define inside the `for` loop
+
+	for (size_t i = 0; i < commandBuffers.size(); i++)
+	{
+		// Start to recording commands in command buffer
+		VkResult result = vkBeginCommandBuffer(commandBuffers[i], &bufferBeginInfo); // Begin recording commands in command buffer
+		if (result != VK_SUCCESS) { throw std::runtime_error("Failed to begin recording Command Buffer!"); }
+
+		// Begin renderPass
+		vkCmdBeginRenderPass(commandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+			// Bind Pipeline to be used in render pass
+			vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+			// Execute pipeline commands
+			vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+			
+
+		// End render pass, this will flush all commands to the GPU
+		vkCmdEndRenderPass(commandBuffers[i]); 
+
+		// Stop to recording commands in command buffer
+		result = vkEndCommandBuffer(commandBuffers[i]); // End recording commands in command buffer
+		if (result != VK_SUCCESS) { throw std::runtime_error("Failed to end recording Command Buffer!"); }
+
+	}
+}
+
 void VulkanRenderer::getPhysicalDevice()
 {
 	// Enumerate Physical devices the vkInstance can access
