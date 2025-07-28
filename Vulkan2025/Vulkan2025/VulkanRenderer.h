@@ -15,6 +15,7 @@
 #include <algorithm>	// алгоритмы STL: find, sort, cout, min, max...
 #include <array>		// std::array - статический массив, размер которого задается при компиляции, в отличии от std::vector, который динамический	
 
+#include "VulkanValidation.h"
 #include "Utilities.h"
 
 class VulkanRenderer
@@ -33,7 +34,7 @@ private:
 	// Vulkan Components
 	// - main components
 	VkInstance instance;	//	базовый обьект, представляет приложение внутри Vulkan. Через него запрашиваются расширения, дебаг и т.д.
-	
+	VkDebugReportCallbackEXT callback; // TODO:
 	/*
 	*	VkPhysicalDevice	- GPU которое доступно
 	*	VkDevice			- логическое устройство, "связь" между приложением и ГПУ, оно предоставляет очереди, позволяет отпралять команды на ГПУ
@@ -75,6 +76,11 @@ private:
 	*	Версию Vulkan,	
 	*	Расширения (например, VK_KHR_surface),
 	*	Валидационные слои (например, VK_LAYER_KHRONOS_validation).
+	*/
+
+	void createDebugCallback();
+	/**
+	* TODO:
 	*/
 
 	void createLogicalDevice(); // Создаёт логическое устройство (VkDevice) для выбранного GPU.
@@ -135,6 +141,7 @@ private:
 	// -- Checker Functions
 	bool checkInstanceExtensionSupport(std::vector<const char*>* checkExtensions);
 	bool checkDeviceExtentionSupport(VkPhysicalDevice device);
+	bool checkValidationLayerSupport();
 	bool checkDeviceSuitable(VkPhysicalDevice device);
 
 

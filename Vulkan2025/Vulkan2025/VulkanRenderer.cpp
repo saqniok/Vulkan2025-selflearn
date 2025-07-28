@@ -11,12 +11,17 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 
 	try {
 		createIntstance();
+		createDebugCallback();
 		createSurface();
 		getPhysicalDevice();
 		createLogicalDevice();
 		createSwapChain();
 		createRenderPass();
 		createGraphicPipeline();
+		createFramebuffers();
+		createCommandPool();
+		createCommandBuffers();
+		recordCommands();
 	}
 	catch (const std::runtime_error& e) {
 		printf("ERROR: %s\n", e.what());
@@ -32,17 +37,27 @@ void VulkanRenderer::cleanup()
 {	
 	vkDestroyCommandPool(mainDevice.logicalDevice, graphicsCommandPools, nullptr);
 
-	for (auto framebuffer : swapChainFramebuffers) { vkDestroyFramebuffer(mainDevice.logicalDevice, framebuffer, nullptr); }
+	for (auto framebuffer : swapChainFramebuffers)
+	{
+		vkDestroyFramebuffer(mainDevice.logicalDevice, framebuffer, nullptr);
+	}
 
 	vkDestroyPipeline(mainDevice.logicalDevice, graphicsPipeline, nullptr);			//reverse destorying agains creating
 	vkDestroyPipelineLayout(mainDevice.logicalDevice, pipelineLayout, nullptr);		//reverse destorying agains creating
 	vkDestroyRenderPass(mainDevice.logicalDevice, renderPass, nullptr);				//reverse destorying agains creating
 
-	for (auto image : swapChainImages) vkDestroyImageView(mainDevice.logicalDevice, image.imageView, nullptr);
+	for (auto image : swapChainImages) 
+	{
+		vkDestroyImageView(mainDevice.logicalDevice, image.imageView, nullptr);
+	}
 
 	vkDestroySwapchainKHR(mainDevice.logicalDevice, swapchain, nullptr);
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyDevice(mainDevice.logicalDevice, nullptr);
+	if (validationEnabled)
+	{
+		DestroyDebugReportCallbackEXT(instance, callback, nullptr);
+	}
 	vkDestroyInstance(instance, nullptr);
 
 }
@@ -81,19 +96,47 @@ void VulkanRenderer::createIntstance()
 	// Add GLFW extension to list of extensions
 	for (size_t i = 0; i < glfwExtensionCount; i++) instanceExtensions.push_back(glfwExtensions[i]);
 
+	//TODO:
+	if (validationEnabled) instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+
 	// Check Instance Extensions supported
 	if (!checkInstanceExtensionSupport(&instanceExtensions)) throw std::runtime_error("VkInstance does not support required extensions!");
 
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
 	createInfo.ppEnabledExtensionNames = instanceExtensions.data();
 
-	//TODO: Set up Validation Layers that Instance will use
-	createInfo.enabledLayerCount = 0;
-	createInfo.ppEnabledLayerNames = nullptr;
+	if (validationEnabled)
+	{
+		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+	}
+	else
+	{
+		createInfo.enabledLayerCount = 0;
+		createInfo.ppEnabledLayerNames = nullptr;
+	}
 
 	// Create Instance
 	VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
-	if(result != VK_SUCCESS) throw std::runtime_error("Failed to create Vulkan Instance!");
+	if (result != VK_SUCCESS) throw std::runtime_error("Failed to create Vulkan Instance!");
+}
+
+void VulkanRenderer::createDebugCallback()
+{
+	// Only create callback if validation enabled
+	if (!validationEnabled) return;
+
+	VkDebugReportCallbackCreateInfoEXT callbackCreateInfo = {};
+	callbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
+	callbackCreateInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;	// Which validation reports should initiate callback
+	callbackCreateInfo.pfnCallback = debugCallback;												// Pointer to callback function itself
+
+	// Create debug callback with custom create function
+	VkResult result = CreateDebugReportCallbackEXT(instance, &callbackCreateInfo, nullptr, &callback);
+	if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create Debug Callback!");
+	}
 }
 
 void VulkanRenderer::createLogicalDevice()
@@ -525,9 +568,10 @@ void VulkanRenderer::createFramebuffers()
 		std::array<VkImageView, 1> attachments = { swapChainImages[i].imageView };
 
 		VkFramebufferCreateInfo framebufferCreateInfo = {};
-		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO; // Type of structure
+		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;				// Type of structure
 		framebufferCreateInfo.renderPass = renderPass;											// реднер-пасс, к которому будет привязан этот фреймбуффер
 		framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());		// Это кол-во цветовых буферов, которые будут использоваться в этом framebuffer
+		framebufferCreateInfo.pAttachments = attachments.data();								// Указатель на массив цветовых буферов, которые будут использоваться в этом framebuffer
 		framebufferCreateInfo.width = swapChainExtent.width;									// Ширина фреймбуффера, которая должна совпадать с шириной swapChain	
 		framebufferCreateInfo.height = swapChainExtent.height;									// Высота фреймбуффера, которая должна совпадать с высотой swapChain	
 		framebufferCreateInfo.layers = 1;														// Кол-во слоёв в этом framebuffer (обычно 1, но можно использовать 3D текстуры или кубические карты)
@@ -582,13 +626,15 @@ void VulkanRenderer::recordCommands()
 	renderPassBeginInfo.renderPass = renderPass;
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };						// Offset of render area in framebuffer in pixels	
 	renderPassBeginInfo.renderArea.extent = swapChainExtent;				// Size of render area in pixels, must match framebuffer size
-	VkClearValue clearValues[] = { {0.6f, 0.65f, 0.4, 1.f } };				// { R, G, B, A } - Clear color for the framebuffer, IN FUTURE we can add more clear values for depth, stencil, etc.
+	VkClearValue clearValues[] = { {0.6f, 0.65f, 0.4f, 1.0f } };				// { R, G, B, A } - Clear color for the framebuffer, IN FUTURE we can add more clear values for depth, stencil, etc.
 	renderPassBeginInfo.pClearValues = clearValues;							// Pointer to array of clear values, used to clear framebuffer before rendering
 	renderPassBeginInfo.clearValueCount = 1;								// Number of clear values in array, must match number of attachments in render pass
 	// renderPassBeginInfo.framebuffer need to be define inside the `for` loop
 
 	for (size_t i = 0; i < commandBuffers.size(); i++)
 	{
+		renderPassBeginInfo.framebuffer = swapChainFramebuffers[i];
+
 		// Start to recording commands in command buffer
 		VkResult result = vkBeginCommandBuffer(commandBuffers[i], &bufferBeginInfo); // Begin recording commands in command buffer
 		if (result != VK_SUCCESS) { throw std::runtime_error("Failed to begin recording Command Buffer!"); }
@@ -684,6 +730,43 @@ bool VulkanRenderer::checkDeviceExtentionSupport(VkPhysicalDevice device)
 
 		if (!hasExtension) return false;
 	}
+	return true;
+}
+
+bool VulkanRenderer::checkValidationLayerSupport()
+{
+	// Get number of validation layers to create vector of appropriate size
+	uint32_t validationLayerCount;
+	vkEnumerateInstanceLayerProperties(&validationLayerCount, nullptr);
+
+	// Check if no validation layers found AND we want at least 1 layer
+	if (validationLayerCount == 0 && validationLayers.size() > 0)
+	{
+		return false;
+	}
+
+	std::vector<VkLayerProperties> availableLayers(validationLayerCount);
+	vkEnumerateInstanceLayerProperties(&validationLayerCount, availableLayers.data());
+
+	// Check if given Validation Layer is in list of given Validation Layers
+	for (const auto& validationLayer : validationLayers)
+	{
+		bool hasLayer = false;
+		for (const auto& availableLayer : availableLayers)
+		{
+			if (strcmp(validationLayer, availableLayer.layerName) == 0)
+			{
+				hasLayer = true;
+				break;
+			}
+		}
+
+		if (!hasLayer)
+		{
+			return false;
+		}
+	}
+
 	return true;
 }
 

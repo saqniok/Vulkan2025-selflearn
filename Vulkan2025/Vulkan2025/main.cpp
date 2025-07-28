@@ -53,7 +53,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <stdexcept> // проверить что это?
+#include <stdexcept> 
 #include <vector>
 #include <iostream>
 
@@ -80,10 +80,12 @@ int main()
 	initWindow();
 
 	//Create Vulkan Rendere Instance
-	if (vulkanRenderer.init(window) == EXIT_FAILURE) return EXIT_FAILURE;
+	if (vulkanRenderer.init(window) == EXIT_FAILURE) 
+		return EXIT_FAILURE;
 
 	//Loop until close
-	while (!glfwWindowShouldClose(window)) glfwPollEvents();
+	while (!glfwWindowShouldClose(window)) 
+		glfwPollEvents();
 
 	vulkanRenderer.cleanup();
 
