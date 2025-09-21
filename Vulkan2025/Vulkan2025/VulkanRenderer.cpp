@@ -145,6 +145,7 @@ void VulkanRenderer::draw()
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
 
+	// Manually reset (close) fences  
 	vkResetFences(mainDevice.logicalDevice, 1, &inFlightFences[currentFrame]);
 
 	VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
@@ -166,7 +167,7 @@ void VulkanRenderer::draw()
 		throw std::runtime_error("Failed to present Image!");
 	}
 
-	// Get next frame
+	// Get next frame (use % MAX_FRAMES_IN_FLIGHT to keep value bellow MAX_FRAMS_IN_FLIGHT)
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
