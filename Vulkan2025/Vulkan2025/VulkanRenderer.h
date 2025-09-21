@@ -72,8 +72,12 @@ private:
 	VkExtent2D swapChainExtent;			//	Размер swapchain-а (ширина и высота картинки, которую ты рендеришь).
 
 	// - Syncronisation
-	VkSemaphore imageAvailable;		//
-	VkSemaphore renderFinished;     //
+	const int MAX_FRAMES_IN_FLIGHT = 2;
+	std::vector<VkSemaphore> imageAvailableSemaphores;
+	std::vector<VkSemaphore> renderFinishedSemaphores;
+	std::vector<VkFence> inFlightFences;
+	std::vector<VkFence> imagesInFlight;
+	size_t currentFrame = 0;
 
 	// Vulkan Functions
 	// - Create Functions
@@ -168,4 +172,3 @@ private:
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 	VkShaderModule createShaderModule(const std::vector<char> &code);
 };
-
