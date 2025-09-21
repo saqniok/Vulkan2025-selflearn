@@ -85,7 +85,10 @@ int main()
 
 	//Loop until close
 	while (!glfwWindowShouldClose(window)) 
-		glfwPollEvents();
+	{
+		glfwPollEvents(); // Check some input like mouse/ keyboard or close window
+		vulkanRenderer.draw();
+	}
 
 	vulkanRenderer.cleanup();
 
