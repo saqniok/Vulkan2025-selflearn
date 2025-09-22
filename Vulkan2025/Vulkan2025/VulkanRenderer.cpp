@@ -149,9 +149,8 @@ void VulkanRenderer::draw()
 	vkResetFences(mainDevice.logicalDevice, 1, &inFlightFences[currentFrame]);
 
 	VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
-	if (result != VK_SUCCESS) {
-		throw std::runtime_error("Failed to submit Command Buffer to Queue!");
-	}
+
+	if (result != VK_SUCCESS) { throw std::runtime_error("Failed to submit Command Buffer to Queue!"); }
 
 	// 3. PRESENT RENDERED IMAGE TO SCREEN
 	VkPresentInfoKHR presentInfo = {};
@@ -163,9 +162,8 @@ void VulkanRenderer::draw()
 	presentInfo.pImageIndices = &imageIndex;
 
 	result = vkQueuePresentKHR(presentationQueue, &presentInfo);
-	if (result != VK_SUCCESS) {
-		throw std::runtime_error("Failed to present Image!");
-	}
+
+	if (result != VK_SUCCESS) { throw std::runtime_error("Failed to present Image!"); }
 
 	// Get next frame (use % MAX_FRAMES_IN_FLIGHT to keep value bellow MAX_FRAMS_IN_FLIGHT)
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -281,10 +279,8 @@ void VulkanRenderer::createDebugCallback()
 
 	// Create debug callback with custom create function
 	VkResult result = CreateDebugReportCallbackEXT(instance, &callbackCreateInfo, nullptr, &callback);
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create Debug Callback!");
-	}
+
+	if (result != VK_SUCCESS) { throw std::runtime_error("Failed to create Debug Callback!"); }
 }
 
 void VulkanRenderer::createLogicalDevice()
@@ -801,7 +797,7 @@ void VulkanRenderer::recordCommands()
 	renderPassBeginInfo.renderPass = renderPass;
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };						// Offset of render area in framebuffer in pixels	
 	renderPassBeginInfo.renderArea.extent = swapChainExtent;				// Size of render area in pixels, must match framebuffer size
-	VkClearValue clearValues[] = { {0.6f, 0.65f, 0.4f, 1.0f } };				// { R, G, B, A } - Clear color for the framebuffer, IN FUTURE we can add more clear values for depth, stencil, etc.
+	VkClearValue clearValues[] = { {0.3f, 0.65f, 0.5f, 1.0f } };			// { R, G, B, A } - Clear color for the framebuffer, IN FUTURE we can add more clear values for depth, stencil, etc.
 	renderPassBeginInfo.pClearValues = clearValues;							// Pointer to array of clear values, used to clear framebuffer before rendering
 	renderPassBeginInfo.clearValueCount = 1;								// Number of clear values in array, must match number of attachments in render pass
 	// renderPassBeginInfo.framebuffer need to be define inside the `for` loop
