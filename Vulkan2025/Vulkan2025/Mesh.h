@@ -8,6 +8,7 @@
 class Mesh
 {
 	Mesh();
+
 	Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, std::vector<Vertex>* vertices);
 	// VkPhysicalDevice will handle memory managment
 	// VkDevice to be handle the buffer itself
@@ -15,14 +16,19 @@ class Mesh
 	int getVertexCount();
 	VkBuffer getVertexBuffer();
 
+	void destroyVertexBuffer();
+
+	~Mesh();
+
 	
 private:
 	int vertexCount;
-	VkBuffer vertexVuffer;
+	VkBuffer vertexBuffer;
 
 	VkPhysicalDevice physicalDevice;
 	VkDevice device;
 
-	void createVertexBuffer(std::vector<Vertex> * vertices);
+	VkBuffer createVertexBuffer(std::vector<Vertex> * vertices);
+	uint32_t findMemoryTypeIndex(uint32_t allowedTypes, VkMemoryPropertyFlags properties);
 };
 
