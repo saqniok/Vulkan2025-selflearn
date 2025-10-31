@@ -49,6 +49,25 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		* также запрашиваете и получаете хэндлы на очереди команд (например, очередь для графических 
 		* операций и очередь для вывода на экран).
 		*/
+
+		// START TEST
+		/*
+			{{x,y,z}, {r,g,b}}
+		*/
+		std::vector<Vertex> meshVertices = {
+			{{0.4, -0.4, 0.f}, {1.f, 0.f, 0.f}},
+			{{0.4, 0.4, 0.f}, {0.f, 1.f, 0.f}},
+			{{-0.4, 0.4, 0.f}, {0.f, 0.f, 1.f}},
+
+			{{-0.4, 0.4, 0.f}, {0.f, 0.f, 1.f}},
+			{{-0.4, -0.4, 0.f}, {1.f, 1.f, 0.f}},
+			{{0.4, -0.4, 0.f}, {1.f, 0.f, 1.f}}
+
+		};
+
+		firstMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, &meshVertices);
+		// END TEST
+
 		createSwapChain();
 		/**
 		* Функция создает VkSwapchainKHR – важнейший компонент для вывода изображения на экран. 
@@ -173,6 +192,9 @@ void VulkanRenderer::cleanup()
 {
 	// wait until no actions being run on device before destroying
 	vkDeviceWaitIdle(mainDevice.logicalDevice);
+
+	// firstMesh
+	firstMesh.destroyVertexBuffer();
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -559,7 +581,7 @@ void VulkanRenderer::createGraphicPipeline()
 																	// VK_VERTEX_RATE_INSTANCE		: Move to a vertex for the next instance
 
 	// How the data for an attribute is defined within a vertex
-	std::array<VkVertexInputAttributeDescription, 1> attributeDescriptions;
+	std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions;
 
 	//Postion Attribute
 	attributeDescriptions[0].binding = 0;							// Which binding the data is at (should be same as bindingDescription.binding)
@@ -567,7 +589,11 @@ void VulkanRenderer::createGraphicPipeline()
 	attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;	// RBG - size 32bit, Format the data will take
 	attributeDescriptions[0].offset = offsetof(Vertex, pos);		// Where this attribute is defined in the data for a single vertex
 
-	// Colour Attribute (TODO:)
+	// Colour Attribute
+	attributeDescriptions[1].binding = 0;
+	attributeDescriptions[1].location = 1;
+	attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[1].offset = offsetof(Vertex, col);
 	
 	// -- VERTEX INPUT --
 	VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo = {};
@@ -835,8 +861,12 @@ void VulkanRenderer::recordCommands()
 			// Bind Pipeline to be used in render pass
 			vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
+			VkBuffer vertexBuffers[] = { firstMesh.getVertexBuffer() };					// Buffers to bind
+			VkDeviceSize offsets[] = { 0 };												// Offset into buffers being bound
+			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);	// Command to bind vertex buffers before drawing
+
 			// Execute pipeline commands
-			vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+			vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(firstMesh.getVertexCount()), 1, 0, 0);			// Now it's upload all vertexes from the mesh, but only from ONE mesh.
 			
 
 		// End render pass, this will flush all commands to the GPU

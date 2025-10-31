@@ -10,6 +10,7 @@ const std::vector<const char*> deviceExtensions = {
 // Vertex data reperesantation
 struct Vertex {
 	glm::vec3 pos; // Vertex position (xyz)
+	glm::vec3 col; // Vertex colour (rgb)
 };
 
 // Indices (locations) of Queue Famalies (if they exist at all)

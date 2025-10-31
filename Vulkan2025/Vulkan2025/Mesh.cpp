@@ -9,7 +9,7 @@ Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, std::vector<V
 	vertexCount = vertices->size();
 	physicalDevice = newPhysicalDevice;
 	device = newDevice;
-	vertexBuffer = createVertexBuffer(vertices);
+	createVertexBuffer(vertices);
 
 }
 
@@ -25,7 +25,8 @@ VkBuffer Mesh::getVertexBuffer()
 
 void Mesh::destroyVertexBuffer()
 {
-	vkDestroyBuffer(device, vertexBuffer, nullptr);
+	vkDestroyBuffer(device, vertexBuffer, nullptr);			// Destroy Buffer - Does not free up memory
+	vkFreeMemory(device, vertexBufferMemory, nullptr);		// Frees GPU memory - Does not destroy the buffer descriptor
 }
 
 Mesh::~Mesh()
@@ -52,9 +53,22 @@ VkBuffer Mesh::createVertexBuffer(std::vector<Vertex>* vertices)
 	// ALLOCATE MEMMORY TO BUFFER
 	VkMemoryAllocateInfo memoryAllocateInfo = {};
 	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	memoryAllocateInfo.allocationSize = memoryRequirements.size;
-	memoryAllocateInfo.memoryTypeIndex = findMemoryTypeIndex(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	memoryAllocateInfo.allocationSize = memoryRequirements.size;	
+	memoryAllocateInfo.memoryTypeIndex = findMemoryTypeIndex(memoryRequirements.memoryTypeBits,		// Index of memory type on Physical Device that has required bit flags
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);				// VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT	: CPU can interact with memory
+																									// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT : Allows palcement of data straight into buffer after mapping
+	// Allocate memory to VkDeviceMemory
+	result = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, &vertexBufferMemory);
+	if (result != VK_SUCCESS) throw std::runtime_error("Failed to allocate Vertex Buffer Memory!");
 
+	// Allocate memory to given vertex buffer
+	vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+
+	// Map Memory to Vertex Buffer
+	void* data;																// 1. Create poitner for normal memory
+	vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);	// 2. `Map` the vertex buffer memory to that point
+	memcpy(data, vertices->data(), (size_t)bufferInfo.size);				// 3. Copy memory from vertices vector to the point
+	vkUnmapMemory(device, vertexBufferMemory);								// 4. `Unmap` the vertex buffer memory
 }
 
 uint32_t Mesh::findMemoryTypeIndex(uint32_t allowedTypes, VkMemoryPropertyFlags properties)

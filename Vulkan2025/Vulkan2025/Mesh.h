@@ -7,6 +7,7 @@
 #include "Utilities.h"
 class Mesh
 {
+public:
 	Mesh();
 
 	Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, std::vector<Vertex>* vertices);
@@ -24,6 +25,7 @@ class Mesh
 private:
 	int vertexCount;
 	VkBuffer vertexBuffer;
+	VkDeviceMemory vertexBufferMemory;
 
 	VkPhysicalDevice physicalDevice;
 	VkDevice device;

@@ -15,6 +15,8 @@
 #include <algorithm>	// алгоритмы STL: find, sort, cout, min, max...
 #include <array>		// std::array - статический массив, размер которого задается при компиляции, в отличии от std::vector, который динамический	
 
+
+#include "Mesh.h"
 #include "VulkanValidation.h"
 #include "Utilities.h"
 
@@ -33,6 +35,9 @@ public:
 
 private:
 	GLFWwindow* window;
+
+	// Scene Object
+	Mesh firstMesh;
 
 	// Vulkan Components
 	// - main components
