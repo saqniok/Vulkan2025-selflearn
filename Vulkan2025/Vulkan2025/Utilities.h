@@ -1,6 +1,9 @@
 ﻿#pragma once
 
 #include <fstream>
+
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
 const std::vector<const char*> deviceExtensions = {
@@ -64,4 +67,59 @@ static std::vector<char> readFile(const std::string& filename)
 	file.close();
 
 	return fileBuffer;
+}
+
+static uint32_t findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t allowedTypes, VkMemoryPropertyFlags properties)
+{
+	// Get properties of physicalDevice memory
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+	{
+		/*
+		*	MEMORY TYPE VALIDATION
+			0000000100 & 0011001000 return false		&&		0001 & 0010 return false
+			0000000100 & 0011001100 return true					0001 & 0001 return true
+			== properties;
+		*/
+		if ((allowedTypes & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)				// Index of memory types must match correpsonding bit in `allowedTypes`
+		{
+			// This memory types is valid
+			return i;
+		}
+	}
+}
+
+static void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsage, 
+	VkMemoryPropertyFlags bufferProperties, VkBuffer* buffer, VkDeviceMemory* bufferMemory) 
+{
+	// Information to create a buffer (doeasn't include assinging memory)
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = bufferSize;									// Size of buffer (size of 1 vertex * of vertices)
+	bufferInfo.usage = bufferUsage;									// Multiple types of buffer possible, we want Vertex Buffer
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;				// Similar to Swap Chain images, can share vertex buffers
+
+	VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, buffer);
+
+	if (result != VK_SUCCESS) throw std::runtime_error("Failed to create a Vertex Buffer!");
+
+	// Get buffer Memory REQUIREMENTS
+	VkMemoryRequirements memoryRequirements;
+	vkGetBufferMemoryRequirements(device, *buffer, &memoryRequirements);
+
+	// ALLOCATE MEMMORY TO BUFFER
+	VkMemoryAllocateInfo memoryAllocateInfo = {};
+	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	memoryAllocateInfo.allocationSize = memoryRequirements.size;
+	memoryAllocateInfo.memoryTypeIndex = findMemoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits,		// Index of memory type on Physical Device that has required bit flags
+		bufferProperties | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);													// VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT	: CPU can interact with memory
+																													// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT : Allows palcement of data straight into buffer after mapping
+																													// Allocate memory to VkDeviceMemory
+	result = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, bufferMemory);
+	if (result != VK_SUCCESS) throw std::runtime_error("Failed to allocate Vertex Buffer Memory!");
+
+	// Allocate memory to given vertex buffer
+	vkBindBufferMemory(device, *buffer, *bufferMemory, 0);
 }
