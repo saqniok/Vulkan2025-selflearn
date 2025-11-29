@@ -69,7 +69,7 @@ private:
 	VkRenderPass renderPass;
 
 	// - Pools
-	VkCommandPool graphicsCommandPools; // Пул команд для графических операций, например, отрисовка
+	VkCommandPool graphicsCommandPool; // Пул команд для графических операций, например, отрисовка
 
 
 	// - Utility

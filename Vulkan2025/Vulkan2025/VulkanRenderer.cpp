@@ -50,24 +50,6 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		* операций и очередь для вывода на экран).
 		*/
 
-		// START TEST
-		/*
-			{{x,y,z}, {r,g,b}}
-		*/
-		std::vector<Vertex> meshVertices = {
-			{{0.4, -0.4, 0.f}, {1.f, 0.f, 0.f}},
-			{{0.4, 0.4, 0.f}, {0.f, 1.f, 0.f}},
-			{{-0.4, 0.4, 0.f}, {0.f, 0.f, 1.f}},
-
-			{{-0.4, 0.4, 0.f}, {0.f, 0.f, 1.f}},
-			{{-0.4, -0.4, 0.f}, {1.f, 1.f, 0.f}},
-			{{0.4, -0.4, 0.f}, {1.f, 0.f, 1.f}}
-
-		};
-
-		firstMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, &meshVertices);
-		// END TEST
-
 		createSwapChain();
 		/**
 		* Функция создает VkSwapchainKHR – важнейший компонент для вывода изображения на экран. 
@@ -105,6 +87,30 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		* командных буферов (VkCommandBuffer). Командные буферы — это объекты, в которые записываются 
 		* все команды для GPU. Пул команд оптимизирует выделение и переиспользование этих буферов.
 		*/
+
+		// START TEST, Create mesh
+		// Vertex Data
+		/*
+			{{x,y,z}, {r,g,b}}
+		*/
+		std::vector<Vertex> meshVertices = {
+			{{0.4, -0.4, 0.f}, {1.f, 0.f, 0.f}},	// 0
+			{{0.4, 0.4, 0.f}, {0.f, 1.f, 0.f}},		// 1
+			{{-0.4, 0.4, 0.f}, {0.f, 0.f, 1.f}},	// 2
+
+			//{{-0.4, 0.4, 0.f}, {0.f, 0.f, 1.f}},	// 2
+			{{-0.4, -0.4, 0.f}, {1.f, 1.f, 0.f}},	// 3
+			//{{0.4, -0.4, 0.f}, {1.f, 0.f, 1.f}}		// 0
+		};
+
+		// Index Data
+		std::vector<uint32_t> meshIndices = {
+			0, 1, 2,	// 1st Triangle
+			2, 3, 0		// 2nd Triangle
+		};
+
+		firstMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, &meshVertices, &meshIndices);
+		// END TEST
 
 		createCommandBuffers();	
 		/**
@@ -194,7 +200,7 @@ void VulkanRenderer::cleanup()
 	vkDeviceWaitIdle(mainDevice.logicalDevice);
 
 	// firstMesh
-	firstMesh.destroyVertexBuffer();
+	firstMesh.destroyBuffers();
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -203,7 +209,7 @@ void VulkanRenderer::cleanup()
 		vkDestroyFence(mainDevice.logicalDevice, inFlightFences[i], nullptr);
 	}
 
-	vkDestroyCommandPool(mainDevice.logicalDevice, graphicsCommandPools, nullptr);
+	vkDestroyCommandPool(mainDevice.logicalDevice, graphicsCommandPool, nullptr);
 
 	for (auto framebuffer : swapChainFramebuffers)
 	{
@@ -780,7 +786,7 @@ void VulkanRenderer::createCommandPool()
 	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily; // Queue family type that buffers from this commandPool woll use
 	
 	// Create a Graphics Queue Family Command Pool
-	VkResult result = vkCreateCommandPool(mainDevice.logicalDevice, &poolInfo, nullptr, &graphicsCommandPools);
+	VkResult result = vkCreateCommandPool(mainDevice.logicalDevice, &poolInfo, nullptr, &graphicsCommandPool);
 	if (result != VK_SUCCESS) { throw std::runtime_error("Failed to create Command Pool!"); }
 }
 
@@ -791,7 +797,7 @@ void VulkanRenderer::createCommandBuffers()
 
 	VkCommandBufferAllocateInfo cbAllocateInfo = {};
 	cbAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	cbAllocateInfo.commandPool = graphicsCommandPools; // Command pool to allocate from
+	cbAllocateInfo.commandPool = graphicsCommandPool; // Command pool to allocate from
 	cbAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	// PRIMARY - buffer you submit to queue. Can't be called from other buffers
 	// SECONDARY - buffer that can be called from other buffers, but can't be submitted to queue directly
@@ -865,9 +871,22 @@ void VulkanRenderer::recordCommands()
 			VkDeviceSize offsets[] = { 0 };												// Offset into buffers being bound
 			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);	// Command to bind vertex buffers before drawing
 
+			// We can bind multi Vertexe buffers, but only 1 Index buffer
+			// whill handle the order to draw all the vertex buffers in the same time
+			// Bind mesh index buffer, with 0 offset and using the uint32 type of indices
+			vkCmdBindIndexBuffer(commandBuffers[i], firstMesh.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
 			// Execute pipeline commands
-			vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(firstMesh.getVertexCount()), 1, 0, 0);			// Now it's upload all vertexes from the mesh, but only from ONE mesh.
-			
+			// NOT SURE vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(firstMesh.getVertexCount()), 1, 0, 0);			// Now it's upload all vertexes from the mesh, but only from ONE mesh.
+		
+            vkCmdDrawIndexed(
+                commandBuffers[i],         // 1. VkCommandBuffer: Командный буфер, в который записывается команда отрисовки.
+                firstMesh.getIndexCount(), // 2. indexCount: Количество индексов, которые будут использованы для отрисовки.
+                1,                         // 3. instanceCount: Количество экземпляров (инстансов) для отрисовки (обычно 1).
+                0,                         // 4. firstIndex: С какого индекса в индексном буфере начать (обычно 0).
+                0,                         // 5. vertexOffset: Смещение для вершинного буфера (обычно 0).
+                0                          // 6. firstInstance: С какого инстанса начать (обычно 0).
+            );
 
 		// End render pass, this will flush all commands to the GPU
 		vkCmdEndRenderPass(commandBuffers[i]); 

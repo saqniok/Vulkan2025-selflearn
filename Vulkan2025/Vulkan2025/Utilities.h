@@ -123,3 +123,51 @@ static void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDev
 	// Allocate memory to given vertex buffer
 	vkBindBufferMemory(device, *buffer, *bufferMemory, 0);
 }
+
+static void copyBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize bufferSize)
+{
+	//Command buffer to hold transfer commands
+	VkCommandBuffer transferCommandBuffer;
+
+	// Command buffer details 
+	VkCommandBufferAllocateInfo alocInfo = {};
+	alocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	alocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;						// Primary Buffer
+	alocInfo.commandPool = transferCommandPool;								// Buffer to allocate from
+	alocInfo.commandBufferCount = 1;										// One buffer allocated
+
+	// Alocate/Begin command buffer from pool
+	vkAllocateCommandBuffers(device, &alocInfo, &transferCommandBuffer);
+
+	// Information to begin the command buffer recording
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;			// Buffer only used once
+
+	// Begin recording transfer commands to command buffer
+	vkBeginCommandBuffer(transferCommandBuffer, &beginInfo);
+
+	// Copy region details
+	VkBufferCopy bufferCopyRegion = {};
+	bufferCopyRegion.srcOffset = 0;				// Optional
+	bufferCopyRegion.dstOffset = 0;				// Optional
+	bufferCopyRegion.size = bufferSize;			// Size of data to copy
+
+	// Command to copy buffer
+	vkCmdCopyBuffer(transferCommandBuffer, srcBuffer, dstBuffer, 1, &bufferCopyRegion);
+
+	vkEndCommandBuffer(transferCommandBuffer);
+
+	// Queue submission information
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &transferCommandBuffer;
+
+	// Submit to transfer queue and wait until completed
+	vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(transferQueue);
+
+	// Free temporary command buffer
+	vkFreeCommandBuffers(device, transferCommandPool, 1, &transferCommandBuffer);  
+}
