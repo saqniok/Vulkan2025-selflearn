@@ -94,13 +94,17 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 			{{x,y,z}, {r,g,b}}
 		*/
 		std::vector<Vertex> meshVertices = {
-			{{0.4, -0.4, 0.f}, {1.f, 0.f, 0.f}},	// 0
-			{{0.4, 0.4, 0.f}, {0.f, 1.f, 0.f}},		// 1
-			{{-0.4, 0.4, 0.f}, {0.f, 0.f, 1.f}},	// 2
+			{{-0.1, -0.4, 0.f}, {1.f, 0.f, 0.f}},	// 0
+			{{-0.1, 0.4, 0.f}, {0.f, 1.f, 0.f}},	// 1
+			{{-0.9, 0.4, 0.f}, {0.f, 0.f, 1.f}},	// 2
+			{{-0.9, -0.4, 0.f}, {1.f, 1.f, 0.f}},	// 3
+		};
 
-			//{{-0.4, 0.4, 0.f}, {0.f, 0.f, 1.f}},	// 2
-			{{-0.4, -0.4, 0.f}, {1.f, 1.f, 0.f}},	// 3
-			//{{0.4, -0.4, 0.f}, {1.f, 0.f, 1.f}}		// 0
+		std::vector<Vertex> meshVertices2 = {
+			{{0.9, -0.2, 0.f}, {1.f, 0.f, 1.f}},	// 0
+			{{0.9, 0.2, 0.f}, {0.f, 1.f, 0.f}},		// 1
+			{{0.1, 0.4, 0.f}, {0.f, 0.f, 0.f}},		// 2
+			{{0.1, -0.4, 0.f}, {0.f, 1.f, 1.f}},	// 3
 		};
 
 		// Index Data
@@ -109,7 +113,12 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 			2, 3, 0		// 2nd Triangle
 		};
 
-		firstMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, &meshVertices, &meshIndices);
+		Mesh firstMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, &meshVertices, &meshIndices);
+
+		Mesh secondMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, &meshVertices2, &meshIndices);
+
+		meshList.push_back(firstMesh);
+		meshList.push_back(secondMesh);
 		// END TEST
 
 		createCommandBuffers();	
@@ -199,8 +208,11 @@ void VulkanRenderer::cleanup()
 	// wait until no actions being run on device before destroying
 	vkDeviceWaitIdle(mainDevice.logicalDevice);
 
-	// firstMesh
-	firstMesh.destroyBuffers();
+	for (size_t i = 0; i < meshList.size(); i++)
+	{
+		meshList[i].destroyBuffers();
+	}
+
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -867,26 +879,29 @@ void VulkanRenderer::recordCommands()
 			// Bind Pipeline to be used in render pass
 			vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-			VkBuffer vertexBuffers[] = { firstMesh.getVertexBuffer() };					// Buffers to bind
-			VkDeviceSize offsets[] = { 0 };												// Offset into buffers being bound
-			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);	// Command to bind vertex buffers before drawing
+			for (size_t j = 0; j < meshList.size(); j++)
+			{
+				VkBuffer vertexBuffers[] = { meshList[j].getVertexBuffer()};					// Buffers to bind
+				VkDeviceSize offsets[] = { 0 };												// Offset into buffers being bound
+				vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);	// Command to bind vertex buffers before drawing
 
-			// We can bind multi Vertexe buffers, but only 1 Index buffer
-			// whill handle the order to draw all the vertex buffers in the same time
-			// Bind mesh index buffer, with 0 offset and using the uint32 type of indices
-			vkCmdBindIndexBuffer(commandBuffers[i], firstMesh.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+				// We can bind multi Vertexe buffers, but only 1 Index buffer
+				// whill handle the order to draw all the vertex buffers in the same time
+				// Bind mesh index buffer, with 0 offset and using the uint32 type of indices
+				vkCmdBindIndexBuffer(commandBuffers[i], meshList[j].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-			// Execute pipeline commands
-			// NOT SURE vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(firstMesh.getVertexCount()), 1, 0, 0);			// Now it's upload all vertexes from the mesh, but only from ONE mesh.
-		
-            vkCmdDrawIndexed(
-                commandBuffers[i],         // 1. VkCommandBuffer: Командный буфер, в который записывается команда отрисовки.
-                firstMesh.getIndexCount(), // 2. indexCount: Количество индексов, которые будут использованы для отрисовки.
-                1,                         // 3. instanceCount: Количество экземпляров (инстансов) для отрисовки (обычно 1).
-                0,                         // 4. firstIndex: С какого индекса в индексном буфере начать (обычно 0).
-                0,                         // 5. vertexOffset: Смещение для вершинного буфера (обычно 0).
-                0                          // 6. firstInstance: С какого инстанса начать (обычно 0).
-            );
+				// Execute pipeline commands
+				// NOT SURE vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(firstMesh.getVertexCount()), 1, 0, 0);			// Now it's upload all vertexes from the mesh, but only from ONE mesh.
+
+				vkCmdDrawIndexed(
+					commandBuffers[i],         // 1. VkCommandBuffer: Командный буфер, в который записывается команда отрисовки.
+					meshList[j].getIndexCount(), // 2. indexCount: Количество индексов, которые будут использованы для отрисовки.
+					1,                         // 3. instanceCount: Количество экземпляров (инстансов) для отрисовки (обычно 1).
+					0,                         // 4. firstIndex: С какого индекса в индексном буфере начать (обычно 0).
+					0,                         // 5. vertexOffset: Смещение для вершинного буфера (обычно 0).
+					0                          // 6. firstInstance: С какого инстанса начать (обычно 0).
+				);
+			}
 
 		// End render pass, this will flush all commands to the GPU
 		vkCmdEndRenderPass(commandBuffers[i]); 

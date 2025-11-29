@@ -37,7 +37,7 @@ private:
 	GLFWwindow* window;
 
 	// Scene Object
-	Mesh firstMesh;
+	std::vector<Mesh> meshList;
 
 	// Vulkan Components
 	// - main components
